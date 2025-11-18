@@ -1,16 +1,18 @@
-import { helloWorld } from "./handlers/hello-world";
-import { Context } from "./types";
-import { isCommentEvent } from "./types/typeguards";
+import { createAdapters } from "./adapters";
+import { planIssue } from "./handlers/plan-issue";
+import { runDailyAssignment } from "./handlers/run-daily-assignment";
+import { BaseContext, Context } from "./types";
+import { isIssueOpenedEvent } from "./types/typeguards";
 
-/**
- * The main plugin function. Split for easier testing.
- */
-export async function runPlugin(context: Context) {
-  const { logger, eventName } = context;
+export async function runPlugin(baseContext: BaseContext) {
+  const context = Object.assign(baseContext, {
+    adapters: createAdapters(baseContext),
+  }) as Context;
 
-  if (isCommentEvent(context)) {
-    return await helloWorld(context);
+  if (isIssueOpenedEvent(context)) {
+    await planIssue(context);
+    return;
   }
 
-  logger.error(`Unsupported event: ${eventName}`);
+  await runDailyAssignment(context);
 }

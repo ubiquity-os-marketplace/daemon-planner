@@ -64,6 +64,8 @@ export const db = factory({
     html_url: String,
     name: String,
     labels: Array,
+    archived: Boolean,
+    private: Boolean,
     owner: {
       login: String,
       id: Number,

@@ -9,10 +9,57 @@ export const handlers = [
   http.get("https://api.github.com/orgs/:org/repos", ({ params: { org } }: { params: { org: string } }) =>
     HttpResponse.json(db.repo.findMany({ where: { owner: { login: { equals: org } } } }))
   ),
+  // get org issues
+  http.get("https://api.github.com/orgs/:org/issues", ({ params: { org }, request }) => {
+    const url = new URL(request.url);
+    const assignee = url.searchParams.get("assignee");
+    const state = url.searchParams.get("state") ?? "open";
+
+    const collection = db.issue
+      .findMany({ where: { owner: { equals: org as string } } })
+      .filter((issue) => {
+        if (state && issue.state !== state) {
+          return false;
+        }
+
+        if (!assignee) {
+          return true;
+        }
+
+        const list = (issue.assignees as { login: string }[] | undefined) ?? [];
+        return list.some((entry) => entry.login === assignee);
+      });
+
+    return HttpResponse.json(collection);
+  }),
   // get org repo issues
-  http.get("https://api.github.com/repos/:owner/:repo/issues", ({ params: { owner, repo } }) =>
-    HttpResponse.json(db.issue.findMany({ where: { owner: { equals: owner as string }, repo: { equals: repo as string } } }))
-  ),
+  http.get("https://api.github.com/repos/:owner/:repo/issues", ({ params: { owner, repo }, request }) => {
+    const url = new URL(request.url);
+    const assignee = url.searchParams.get("assignee");
+    const state = url.searchParams.get("state") ?? "open";
+
+    const list = db.issue
+      .findMany({ where: { owner: { equals: owner as string }, repo: { equals: repo as string } } })
+      .filter((issue) => {
+        if (state && issue.state !== state) {
+          return false;
+        }
+
+        if (assignee === "none") {
+          const assignees = (issue.assignees as { login: string }[] | undefined) ?? [];
+          return assignees.length === 0;
+        }
+
+        if (!assignee) {
+          return true;
+        }
+
+        const assignees = (issue.assignees as { login: string }[] | undefined) ?? [];
+        return assignees.some((item) => item.login === assignee);
+      });
+
+    return HttpResponse.json(list);
+  }),
   // get issue
   http.get("https://api.github.com/repos/:owner/:repo/issues/:issue_number", ({ params: { owner, repo, issue_number: issueNumber } }) =>
     HttpResponse.json(
@@ -37,6 +84,78 @@ export const handlers = [
     const newItem = { ...issueTemplate, id };
     db.issue.create(newItem);
     return HttpResponse.json(newItem);
+  }),
+  // add assignees
+  http.post("https://api.github.com/repos/:owner/:repo/issues/:issue_number/assignees", async ({ params: { owner, repo, issue_number: issueNumber }, request }) => {
+    const body = await getValue(request.body);
+    const assignees = Array.isArray(body?.assignees) ? body.assignees : [];
+    const issue = db.issue.findFirst({
+      where: {
+        owner: { equals: owner as string },
+        repo: { equals: repo as string },
+        number: { equals: Number(issueNumber) },
+      },
+    });
+
+    if (!issue) {
+      return new HttpResponse(null, { status: 404 });
+    }
+
+    const existing = (issue.assignees as { login: string }[] | undefined) ?? [];
+    const next = Array.from(new Set([...existing.map((entry) => entry.login), ...assignees]))
+      .map((login) => ({ login }));
+
+    const updated = {
+      ...issue,
+      assignee: next[0] ?? null,
+      assignees: next,
+    };
+
+    db.issue.update({
+      where: {
+        id: {
+          equals: issue.id as number,
+        },
+      },
+      data: updated,
+    });
+
+    return HttpResponse.json(updated);
+  }),
+  // remove assignees
+  http.delete("https://api.github.com/repos/:owner/:repo/issues/:issue_number/assignees", async ({ params: { owner, repo, issue_number: issueNumber }, request }) => {
+    const body = await getValue(request.body);
+    const assignees = Array.isArray(body?.assignees) ? body.assignees : [];
+    const issue = db.issue.findFirst({
+      where: {
+        owner: { equals: owner as string },
+        repo: { equals: repo as string },
+        number: { equals: Number(issueNumber) },
+      },
+    });
+
+    if (!issue) {
+      return new HttpResponse(null, { status: 404 });
+    }
+
+    const remaining = ((issue.assignees as { login: string }[] | undefined) ?? []).filter((entry) => !assignees.includes(entry.login));
+
+    const updated = {
+      ...issue,
+      assignee: remaining[0] ?? null,
+      assignees: remaining,
+    };
+
+    db.issue.update({
+      where: {
+        id: {
+          equals: issue.id as number,
+        },
+      },
+      data: updated,
+    });
+
+    return HttpResponse.json(updated);
   }),
   // create comment
   http.post("https://api.github.com/repos/:owner/:repo/issues/:issue_number/comments", async ({ params: { issue_number: issueNumber }, request }) => {

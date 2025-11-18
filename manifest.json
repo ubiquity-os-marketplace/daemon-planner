@@ -1,22 +1,38 @@
 {
-  "name": "ts-template",
-  "description": "ts-template for UbiquityOS plugins.",
-  "commands": {
-    "hello": {
-      "ubiquity:example": "/hello argument",
-      "description": "Hello command with an argument."
-    }
-  },
+  "name": "@ubiquity-os/daemon-planner",
+  "description": "Automated sprint planner that assigns GitHub issues based on contributor capacity.",
   "configuration": {
     "default": {},
     "type": "object",
     "properties": {
-      "configurableResponse": {
-        "default": "Hello, world!",
-        "type": "string"
+      "organizations": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": ["ubiquity", "ubiquity-os", "ubiquity-os-marketplace"]
       },
-      "customStringsUrl": {
-        "type": "string"
+      "candidateLogins": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "dailyCapacityHours": {
+        "type": "number",
+        "default": 6
+      },
+      "planningHorizonDays": {
+        "type": "number",
+        "default": 5
+      },
+      "reviewBufferHours": {
+        "type": "number",
+        "default": 2
+      },
+      "defaultEstimateHours": {
+        "type": "number",
+        "default": 4
       }
     }
   }

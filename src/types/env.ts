@@ -1,6 +1,6 @@
 import { StaticDecode, Type as T } from "@sinclair/typebox";
-import "dotenv/config";
 import { LOG_LEVEL } from "@ubiquity-os/ubiquity-os-logger";
+import "dotenv/config";
 
 /**
  * Define sensitive environment variables here.
@@ -12,6 +12,11 @@ import { LOG_LEVEL } from "@ubiquity-os/ubiquity-os-logger";
 export const envSchema = T.Object({
   LOG_LEVEL: T.Optional(T.Enum(LOG_LEVEL, { default: LOG_LEVEL.INFO })),
   KERNEL_PUBLIC_KEY: T.Optional(T.String()),
+  MATCHMAKING_ENDPOINT: T.Optional(T.String()),
+  COMMAND_ENDPOINT: T.Optional(T.String()),
+  SUPABASE_URL: T.Optional(T.String({ format: "uri" })),
+  SUPABASE_KEY: T.Optional(T.String()),
+  SUPABASE_CANDIDATES_TABLE: T.Optional(T.String({ default: "candidates" })),
 });
 
 export type Env = StaticDecode<typeof envSchema>;

@@ -1,93 +1,55 @@
-# `@ubiquity-os/plugin-template`
+# `@ubiquity-os/daemon-planner`
 
-## Prerequisites
+## Overview
 
-- A good understanding of how the [kernel](https://github.com/ubiquity/ubiquibot-kernel) works and how to interact with it.
-- A basic understanding of the Ubiquibot configuration and how to define your plugin's settings.
+Daemon Planner automates sprint planning for UbiquityOS teams. It listens for `issues.opened` events, evaluates contributor capacity across the configured organisations, and assigns issues to the best available contributor. A scheduled GitHub Action can invoke the plugin once per day to fill any unassigned backlog items across the configured organisations.
 
-## Getting Started
+## Configuration
 
-1. Create a new repository using this template.
-2. Clone the repository to your local machine.
-3. Install the dependencies preferably using `bun`.
-
-## Creating a new plugin
-
-- If your plugin is to be used as a slash command which should have faster response times as opposed to longer running GitHub action tasks, you should use the `worker` type.
-
-1. Ensure you understand and have setup the [kernel](https://github.com/ubiquity/ubiquibot-kernel).
-2. Update [compute.yml](./.github/workflows/compute.yml) with your plugin's name and update the `id`.
-3. Update [context.ts](./src/types/context.ts) with the events that your plugin will fire on.
-4. Update [manifest.json](./manifest.json) with a proper description of your plugin.
-5. Update [plugin-input.ts](./src/types/plugin-input.ts) to match the `with:` settings in your org or repo level configuration.
-
-- Your plugin config should look similar to this:
+Add the plugin to your `.ubiquibot-config.yml` and customise as needed. Sensible defaults are provided for all fields, so you can start with the minimal example and iterate later.
 
 ```yml
 plugins:
-  - name: hello-world
-    id: hello-world
+  - name: daemon-planner
+    id: daemon-planner
     uses:
-      - plugin: http://localhost:4000
+      - plugin: https://your-worker-url
         with:
-          # Define configurable items here and the kernel will pass these to the plugin.
-          configurableResponse: "Hello, is it me you are looking for?"
-          customStringsUrl: "https://raw.githubusercontent.com/ubiquibot/plugin-template/development/strings.json"
+          candidateLogins:
+            - shiv810
+            - EresDev
+            - whilefoo
+          organizations:
+            - ubiquity
+            - ubiquity-os
+            - ubiquity-os-marketplace
+          dailyCapacityHours: 6
+          planningHorizonDays: 5
+          reviewBufferHours: 2
+          defaultEstimateHours: 4
 ```
 
-###### At this stage, your plugin will fire on your defined events with the required settings passed in from the kernel. You can now start writing your plugin's logic.
+### Key Settings
 
-6. Start building your plugin by adding your logic to the [plugin.ts](./src/index.ts) file.
+- `organizations`: Organisations to inspect when evaluating contributor workload. Defaults to `ubiquity`, `ubiquity-os`, `ubiquity-os-marketplace`.
+- `candidateLogins`: Optional static shortlist of contributors. When omitted, the plugin queries the Supabase candidates table.
+- `dailyCapacityHours`, `planningHorizonDays`, `reviewBufferHours`: Scheduling parameters that translate work queues into hours of focus time.
+- `defaultEstimateHours`: Fallback estimate when issue labels do not provide a duration.
 
-## Testing a plugin
+### Environment
 
-### Worker Plugins
+Set these variables wherever the worker/action executes:
 
-- `bun worker` - to run the worker locally.
-- To trigger the worker, `POST` requests to http://localhost:4000/ with an event payload similar to:
+- `MATCHMAKING_ENDPOINT` *(optional)*: REST endpoint that ranks candidates for a task.
+- `COMMAND_ENDPOINT` *(optional)*: Endpoint invoked after assignments to orchestrate auxiliary workflows.
+- `SUPABASE_URL` *(optional)*: Supabase project URL. Required when relying on automatic candidate discovery.
+- `SUPABASE_KEY` *(optional)*: Service role key used to query Supabase.
+- `SUPABASE_CANDIDATES_TABLE` *(optional, default `candidates`)*: Table or view exposing a `login` column for contributor handles.
 
-```ts
-await fetch("http://localhost:4000/", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    stateId: "",
-    eventName: "",
-    eventPayload: "",
-    settings: "",
-    ref: "",
-    authToken: "",
-  }),
-});
-```
+## Development
 
-A full example can be found [here](https://github.com/ubiquibot/assistive-pricing/blob/623ea3f950f04842f2d003bda3fc7b7684e41378/tests/http/request.http).
+- Install dependencies with `bun install`.
+- Run unit tests with `bun test`.
+- Use `bun worker` to run the Cloudflare Worker locally during development.
 
-#### Deploying the Worker
-
-For testing purposes, the worker can be deployed through the Worker Deploy and Worker Delete workflows. It requires to
-create a personal [Cloudflare Account](https://www.cloudflare.com/), and fill the `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` within your
-GitHub Action Secrets.
-
-### Action Plugins
-
-- Ensure the kernel is running and listening for events.
-- Fire an event in/to the repo where the kernel is installed. This can be done in a number of ways, the easiest being via the GitHub UI or using the GitHub API, such as posting a comment, opening an issue, etc in the org/repo where the kernel is installed.
-- The kernel will process the event and dispatch it using the settings defined in your `.ubiquibot-config.yml`.
-- The `compute.yml` workflow will run and execute your plugin's logic.
-- You can view the logs in the Actions tab of your repo.
-
-[Nektos Act](https://github.com/nektos/act) - a tool for running GitHub Actions locally.
-
-## More information
-
-- [Full Ubiquibot Configuration](https://github.com/ubiquity/ubiquibot/blob/0fde7551585499b1e0618ec8ea5e826f11271c9c/src/types/configuration-types.ts#L62) - helpful for defining your plugin's settings as they are strongly typed and will be validated by the kernel.
-- [Ubiquibot V1](https://github.com/ubiquity/ubiquibot) - helpful for porting V1 functionality to V2, helper/utility functions, types, etc. Everything is based on the V1 codebase but with a more modular approach. When using V1 code, keep in mind that most all code will need refactored to work with the new V2 architecture.
-
-## Examples
-
-- [Start/Stop Slash Command](https://github.com/ubq-testing/start-stop-module) - simple
-- [Assistive Pricing Plugin](https://github.com/ubiquibot/assistive-pricing) - complex
-- [Conversation Rewards](https://github.com/ubiquibot/conversation-rewards) - really complex
+Ensure the plugin has access to a GitHub token with `repo` scope so it can manage assignees and fetch issue backlogs across the configured organisations.
