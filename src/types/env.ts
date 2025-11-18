@@ -12,11 +12,13 @@ import "dotenv/config";
 export const envSchema = T.Object({
   LOG_LEVEL: T.Optional(T.Enum(LOG_LEVEL, { default: LOG_LEVEL.INFO })),
   KERNEL_PUBLIC_KEY: T.Optional(T.String()),
-  MATCHMAKING_ENDPOINT: T.Optional(T.String()),
+  MATCHMAKING_ENDPOINT: T.String({ format: "uri", default: "https://command-start-stop.ubq.fi" }),
   COMMAND_ENDPOINT: T.Optional(T.String()),
   SUPABASE_URL: T.Optional(T.String({ format: "uri" })),
   SUPABASE_KEY: T.Optional(T.String()),
   SUPABASE_CANDIDATES_TABLE: T.Optional(T.String({ default: "candidates" })),
+  APP_ID: T.String({ minLength: 1 }),
+  APP_PRIVATE_KEY: T.String({ minLength: 1 }),
 });
 
 export type Env = StaticDecode<typeof envSchema>;
