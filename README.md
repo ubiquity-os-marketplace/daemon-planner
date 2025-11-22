@@ -10,23 +10,20 @@ Add the plugin to your `.ubiquibot-config.yml` and customise as needed. Sensible
 
 ```yml
 plugins:
-  - name: daemon-planner
-    id: daemon-planner
-    uses:
-      - plugin: https://your-worker-url
-        with:
-          candidateLogins:
-            - shiv810
-            - EresDev
-            - whilefoo
-          organizations:
-            - ubiquity
-            - ubiquity-os
-            - ubiquity-os-marketplace
-          dailyCapacityHours: 6
-          planningHorizonDays: 5
-          reviewBufferHours: 2
-          defaultEstimateHours: 4
+  https://your-worker-url:
+    with:
+      candidateLogins:
+        - shiv810
+        - gentlementlegen
+        - whilefoo
+      organizations:
+        - ubiquity
+        - ubiquity-os
+        - ubiquity-os-marketplace
+      dailyCapacityHours: 6
+      planningHorizonDays: 5
+      reviewBufferHours: 2
+      defaultEstimateHours: 4
 ```
 
 ### Key Settings
