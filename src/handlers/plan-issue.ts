@@ -1,4 +1,4 @@
-import { Context } from "../types";
+import { Context } from "../types/index";
 import { planAssignment } from "./planner/plan-assignment";
 
 export async function planIssue(context: Context<"issues.opened">) {

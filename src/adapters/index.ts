@@ -1,4 +1,4 @@
-import { BaseContext, PluginAdapters } from "../types";
+import { BaseContext, PluginAdapters } from "../types/index";
 import { fetchSupabaseCandidates } from "./candidates";
 
 export function createAdapters(context: BaseContext): PluginAdapters {

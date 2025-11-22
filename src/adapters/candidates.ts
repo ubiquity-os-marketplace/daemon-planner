@@ -1,4 +1,4 @@
-import { Env } from "../types";
+import { Env } from "../types/index";
 
 type Logger = {
   error(message: string, meta?: unknown): void;

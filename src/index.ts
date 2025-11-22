@@ -1,7 +1,7 @@
 import { createAdapters } from "./adapters/index";
 import { planIssue } from "./handlers/plan-issue";
 import { runDailyAssignment } from "./handlers/run-daily-assignment";
-import { BaseContext, Context } from "./types";
+import { BaseContext, Context } from "./types/index";
 import { isIssueOpenedEvent } from "./types/typeguards";
 
 export async function runPlugin(baseContext: BaseContext) {

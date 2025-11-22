@@ -1,4 +1,4 @@
-import { PluginSettings } from "../../types";
+import { PluginSettings } from "../../types/index";
 import { estimateIssueHours } from "./estimate-issue-hours";
 import { PlannerIssue } from "./types";
 
