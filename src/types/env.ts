@@ -1,6 +1,5 @@
 import { StaticDecode, Type as T } from "@sinclair/typebox";
 import { LOG_LEVEL } from "@ubiquity-os/ubiquity-os-logger";
-import "dotenv/config";
 
 /**
  * Define sensitive environment variables here.
@@ -19,6 +18,7 @@ export const envSchema = T.Object({
   SUPABASE_CANDIDATES_TABLE: T.Optional(T.String({ default: "candidates" })),
   APP_ID: T.String({ minLength: 1 }),
   APP_PRIVATE_KEY: T.String({ minLength: 1 }),
+  NODE_ENV: T.Optional(T.String()),
 });
 
 export type Env = StaticDecode<typeof envSchema>;

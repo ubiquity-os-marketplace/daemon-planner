@@ -1,19 +1,14 @@
 import { Context } from "../types/index";
 import { planAssignment } from "./planner/plan-assignment";
-import { PlannerIssue } from "./planner/types";
 
 async function assignUnownedIssues(context: Context, owner: string, repo: string) {
-  const issues = await context.octokit.paginate(
-    context.octokit.rest.issues.listForRepo,
-    {
-      owner,
-      repo,
-      state: "open",
-      assignee: "none",
-      per_page: 100,
-    },
-    (response) => response.data as PlannerIssue[]
-  );
+  const issues = await context.octokit.paginate(context.octokit.rest.issues.listForRepo, {
+    owner,
+    repo,
+    state: "open",
+    assignee: "none",
+    per_page: 100,
+  });
 
   for (const issue of issues) {
     await planAssignment(context, { owner, name: repo }, issue);
