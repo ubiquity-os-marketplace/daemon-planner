@@ -1,6 +1,7 @@
 {
   "name": "@ubiquity-os/daemon-planner",
   "description": "Automated sprint planner that assigns GitHub issues based on contributor capacity.",
+  "ubiquity:listeners": ["issues.opened"],
   "configuration": {
     "default": {},
     "type": "object",
