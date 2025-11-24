@@ -33,15 +33,15 @@ function parseDurationHours(value: string, config: PluginSettings): number | nul
     return null;
   }
 
-  if (/week/i.test(cleaned)) {
+  if (/weeks?/i.test(cleaned)) {
     return amount * config.dailyCapacityHours * 5;
   }
 
-  if (/day/i.test(cleaned)) {
+  if (/day?s/i.test(cleaned)) {
     return amount * config.dailyCapacityHours;
   }
 
-  if (/hour/i.test(cleaned)) {
+  if (/hour?s/i.test(cleaned)) {
     return amount;
   }
 
