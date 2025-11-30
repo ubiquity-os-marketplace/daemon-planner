@@ -19,5 +19,6 @@
         "type": "string"
       }
     }
-  }
+  },
+  "short_name": "ubiquity-os-marketplace/daemon-planner@development"
 }
