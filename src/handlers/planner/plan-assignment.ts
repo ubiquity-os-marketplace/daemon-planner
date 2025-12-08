@@ -17,7 +17,7 @@ function currentAssignees(issue: PlannerIssue): string[] {
   return Array.from(new Set(result));
 }
 
-function sortByLoad(collection: CandidateScore[]): CandidateScore[] {
+function sortByWorkload(collection: CandidateScore[]): CandidateScore[] {
   return [...collection].sort((a, b) => a.load - b.load);
 }
 
@@ -49,27 +49,32 @@ export async function planAssignment(context: PlannerContext, repository: Reposi
   }
 
   if (scores.length === 0) {
-    context.logger.warn(`Could not calculate loads for ${repository.owner}/${repository.name}#${issue.number}`);
+    context.logger.warn(`Could not calculate workloads for ${repository.owner}/${repository.name}#${issue.number}`);
     return;
   }
 
   const estimate = estimateIssueHours(issue, context.config) + context.config.reviewBufferHours;
   const capacity = context.config.dailyCapacityHours * context.config.planningHorizonDays;
 
-  const available = sortByLoad(scores.filter((entry) => entry.load + estimate <= capacity));
-  const fallback = sortByLoad(scores);
+  const available = sortByWorkload(scores.filter((entry) => entry.load + estimate <= capacity));
+  const fallback = sortByWorkload(scores);
   const chosen = (available.length > 0 ? available : fallback)[0];
 
   if (!chosen) {
     return;
   }
 
-  await context.octokit.rest.issues.addAssignees({
-    owner: repository.owner,
-    repo: repository.name,
-    issue_number: issue.number,
-    assignees: [chosen.login],
+  await fetch(context.env.START_STOP_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      repository,
+      issue: { number: issue.number },
+      command: "assign",
+      assignee: chosen.login,
+    }),
   });
-
   context.logger.ok(`Assigned ${repository.owner}/${repository.name}#${issue.number} to ${chosen.login}`);
 }

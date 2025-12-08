@@ -38,7 +38,7 @@ plugins:
 Set these variables wherever the worker/action executes:
 
 - `MATCHMAKING_ENDPOINT` *(optional)*: REST endpoint that ranks candidates for a task.
-- `COMMAND_ENDPOINT` *(optional)*: Endpoint invoked after assignments to orchestrate auxiliary workflows.
+- `START_STOP_ENDPOINT` *(optional)*: Endpoint invoked after assignments to orchestrate auxiliary workflows.
 - `SUPABASE_URL` *(optional)*: Supabase project URL. Required when relying on automatic candidate discovery.
 - `SUPABASE_KEY` *(optional)*: Service role key used to query Supabase.
 - `SUPABASE_CANDIDATES_TABLE` *(optional, default `candidates`)*: Table or view exposing a `login` column for contributor handles.

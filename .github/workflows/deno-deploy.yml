@@ -30,7 +30,7 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           LOG_LEVEL: ${{ secrets.LOG_LEVEL || 'info' }}
           MATCHMAKING_ENDPOINT: ${{ secrets.MATCHMAKING_ENDPOINT }}
-          COMMAND_ENDPOINT: ${{ secrets.COMMAND_ENDPOINT }}
+          START_STOP_ENDPOINT: ${{ secrets.START_STOP_ENDPOINT }}
         with:
           token: ${{ secrets.DENO_DEPLOY_TOKEN }}
           action: ${{ github.event_name == 'delete' && 'delete' || 'deploy' }}

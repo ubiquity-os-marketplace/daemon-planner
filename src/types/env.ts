@@ -11,8 +11,8 @@ import { LOG_LEVEL } from "@ubiquity-os/ubiquity-os-logger";
 export const envSchema = T.Object({
   LOG_LEVEL: T.Optional(T.Enum(LOG_LEVEL, { default: LOG_LEVEL.INFO })),
   KERNEL_PUBLIC_KEY: T.Optional(T.String()),
-  MATCHMAKING_ENDPOINT: T.String({ format: "uri", default: "https://text-vector-embeddings.ubq.fi" }),
-  COMMAND_ENDPOINT: T.String({ format: "uri", default: "https://command-start-stop.ubq.fi" }),
+  MATCHMAKING_ENDPOINT: T.String({ format: "uri", default: "https://text-vector-embeddings-mai.deno.dev" }),
+  START_STOP_ENDPOINT: T.String({ format: "uri", default: "https://command-start-stop-main.deno.dev" }),
   SUPABASE_URL: T.String({ format: "uri" }),
   SUPABASE_KEY: T.String(),
   SUPABASE_CANDIDATES_TABLE: T.Optional(T.String({ default: "candidates" })),

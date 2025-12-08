@@ -53,7 +53,7 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
     });
 
     if (!response.ok) {
-      context.logger.error(`Matchmaking endpoint returned ${response.status}`);
+      context.logger.error(`Matchmaking endpoint returned ${response.status}`, { response });
       return baseCandidates;
     }
 
@@ -67,9 +67,8 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
     const remaining = baseCandidates.filter((login) => !ordered.includes(login));
 
     return [...ordered, ...remaining];
-  } catch (error) {
-    const cause = error instanceof Error ? error : new Error(String(error));
-    context.logger.error("Failed to query matchmaking endpoint", { error: cause });
+  } catch (err) {
+    context.logger.error("Failed to query matchmaking endpoint", { err });
     return baseCandidates;
   }
 }
