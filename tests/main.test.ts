@@ -41,7 +41,7 @@ describe("Plugin tests", () => {
     await runPlugin(context);
 
     const issue = db.issue.findFirst({ where: { number: { equals: 1 } } });
-    expect(issue?.assignees?.[0]?.login).toBe("user1");
+    expect(issue?.assignees?.[0]?.login).toBe("user2");
   });
 
   it("Should assign unowned issues across configured organizations during the daily schedule", async () => {
@@ -59,13 +59,21 @@ describe("Plugin tests", () => {
 function createConfig(overrides: Partial<PluginSettings> = {}): PluginSettings {
   return {
     organizations: ["ubiquity", "ubiquity-os", "ubiquity-os-marketplace"],
-    candidateLogins: ["user1", "user2"],
     dailyCapacityHours: 6,
     planningHorizonDays: 5,
     reviewBufferHours: 2,
     defaultEstimateHours: 4,
     ...overrides,
   } as PluginSettings;
+}
+
+function createEnv(): Env {
+  return {
+    MATCHMAKING_ENDPOINT: "https://text-vector-embeddings-mai.deno.dev",
+    START_STOP_ENDPOINT: "https://command-start-stop-main.deno.dev",
+    APP_ID: "1",
+    APP_PRIVATE_KEY: "key",
+  } as Env;
 }
 
 function createIssueOpenedContext(overrides: Partial<PluginSettings> = {}): BaseContext<"issues.opened"> {
@@ -86,7 +94,7 @@ function createIssueOpenedContext(overrides: Partial<PluginSettings> = {}): Base
     },
     logger: new Logs("debug"),
     config: createConfig(overrides),
-    env: {} as Env,
+    env: createEnv(),
     octokit,
   } as unknown as BaseContext<"issues.opened">;
 }
@@ -98,7 +106,7 @@ function createScheduleContext(overrides: Partial<PluginSettings> = {}): BaseCon
     payload: {},
     logger: new Logs("debug"),
     config: createConfig(overrides),
-    env: {} as Env,
+    env: createEnv(),
     octokit,
   } as unknown as BaseContext;
 }

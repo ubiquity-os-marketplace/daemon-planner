@@ -5,6 +5,58 @@ import issueTemplate from "./issue-template";
  * Intercepts the routes and returns a custom payload
  */
 export const handlers = [
+  http.get("https://api.github.com/orgs/:org/members", () => HttpResponse.json(db.users.getAll())),
+  http.post("https://text-vector-embeddings-mai.deno.dev", async ({ request }) => {
+    const body = await request.json();
+    const candidates = Array.isArray((body as { candidates?: unknown }).candidates) ? (body as { candidates?: unknown }).candidates : [];
+    return HttpResponse.json({ candidates });
+  }),
+  http.post("https://command-start-stop-main.deno.dev", async ({ request }) => {
+    const body = (await request.json()) as {
+      repository?: { owner?: string; name?: string };
+      issue?: { number?: number };
+      assignee?: string;
+    };
+
+    const owner = body.repository?.owner;
+    const repo = body.repository?.name;
+    const issueNumber = body.issue?.number;
+    const assignee = body.assignee;
+
+    if (!owner || !repo || !issueNumber || !assignee) {
+      return new HttpResponse(null, { status: 400 });
+    }
+
+    const issue = db.issue.findFirst({
+      where: {
+        owner: { equals: owner },
+        repo: { equals: repo },
+        number: { equals: issueNumber },
+      },
+    });
+
+    if (!issue) {
+      return new HttpResponse(null, { status: 404 });
+    }
+
+    const existing = (issue.assignees as { login: string }[] | undefined) ?? [];
+    const next = Array.from(new Set([...existing.map((entry) => entry.login), assignee])).map((login) => ({ login }));
+
+    db.issue.update({
+      where: {
+        id: {
+          equals: issue.id as number,
+        },
+      },
+      data: {
+        ...issue,
+        assignees: next,
+        assignee: next[0] ?? null,
+      },
+    });
+
+    return HttpResponse.json({ ok: true, assignees: next });
+  }),
   // get org repos
   http.get("https://api.github.com/orgs/:org/repos", ({ params: { org } }: { params: { org: string } }) =>
     HttpResponse.json(db.repo.findMany({ where: { owner: { login: { equals: org } } } }))

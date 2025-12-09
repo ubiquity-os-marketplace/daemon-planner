@@ -26,8 +26,6 @@ jobs:
           APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
           KERNEL_PUBLIC_KEY: ${{ secrets.KERNEL_PUBLIC_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           LOG_LEVEL: ${{ secrets.LOG_LEVEL || 'info' }}
           MATCHMAKING_ENDPOINT: ${{ secrets.MATCHMAKING_ENDPOINT }}
           START_STOP_ENDPOINT: ${{ secrets.START_STOP_ENDPOINT }}

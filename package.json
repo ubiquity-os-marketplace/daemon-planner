@@ -24,7 +24,10 @@
     "knip-ci": "knip --no-exit-code --reporter json --config .github/knip.ts",
     "test": "jest --setupFiles dotenv/config --coverage",
     "worker": "wrangler dev --env dev --port 4000",
-    "prepare": "husky"
+    "generate": "dotenv -- bun run-p generate:*",
+    "generate:text-vector-embeddings": "bun x openapi-typescript ${MATCHMAKING_ENDPOINT}/openapi --output src/types/generated/openapi.ts",
+    "generate:command-start-stop": "bun x openapi-typescript ${START_STOP_ENDPOINT}/openapi --output src/types/generated/openapi.ts",
+    "prepare": "bun run generate:openapi-types && husky"
   },
   "keywords": [
     "typescript",
@@ -56,6 +59,7 @@
     "@types/node": "24.10.1",
     "@ubiquity-os/eslint-plugin-no-empty-strings": "^1.0.3",
     "cspell": "9.3.2",
+    "dotenv-cli": "^11.0.0",
     "eslint": "9.39.1",
     "eslint-plugin-check-file": "3.3.1",
     "eslint-plugin-sonarjs": "3.0.5",

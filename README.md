@@ -12,10 +12,6 @@ Add the plugin to your `.ubiquibot-config.yml` and customise as needed. Sensible
 plugins:
   https://your-worker-url:
     with:
-      candidateLogins:
-        - shiv810
-        - gentlementlegen
-        - whilefoo
       organizations:
         - ubiquity
         - ubiquity-os
@@ -29,9 +25,10 @@ plugins:
 ### Key Settings
 
 - `organizations`: Organisations to inspect when evaluating contributor workload. Defaults to `ubiquity`, `ubiquity-os`, `ubiquity-os-marketplace`.
-- `candidateLogins`: Optional static shortlist of contributors. When omitted, the plugin queries the Supabase candidates table.
 - `dailyCapacityHours`, `planningHorizonDays`, `reviewBufferHours`: Scheduling parameters that translate work queues into hours of focus time.
 - `defaultEstimateHours`: Fallback estimate when issue labels do not provide a duration.
+
+Candidates are sourced automatically from each configured organisation's collaborators. Workload calculations aggregate a contributor's open issues across all configured organisations.
 
 ### Environment
 
@@ -39,14 +36,14 @@ Set these variables wherever the worker/action executes:
 
 - `MATCHMAKING_ENDPOINT` *(optional)*: REST endpoint that ranks candidates for a task.
 - `START_STOP_ENDPOINT` *(optional)*: Endpoint invoked after assignments to orchestrate auxiliary workflows.
-- `SUPABASE_URL` *(optional)*: Supabase project URL. Required when relying on automatic candidate discovery.
-- `SUPABASE_KEY` *(optional)*: Service role key used to query Supabase.
-- `SUPABASE_CANDIDATES_TABLE` *(optional, default `candidates`)*: Table or view exposing a `login` column for contributor handles.
+  OpenAPI specs are read directly from each endpoint's `/openapi` path during the `prepare` step to generate types; no additional keys are required.
 
 ## Development
 
 - Install dependencies with `bun install`.
 - Run unit tests with `bun test`.
 - Use `bun worker` to run the Cloudflare Worker locally during development.
+
+Regenerate endpoint typings with `bun run generate:openapi-types` (automatically executed during `prepare`). Generated files live under `src/types/generated` and are gitignored.
 
 Ensure the plugin has access to a GitHub token with `repo` scope so it can manage assignees and fetch issue backlogs across the configured organisations.

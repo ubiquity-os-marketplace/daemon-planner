@@ -7,7 +7,7 @@ export type SupportedEvents = "issues.opened" | "issues.reopened";
 export type BaseContext<T extends SupportedEvents = SupportedEvents> = PluginContext<PluginSettings, Env, null, T>;
 
 export interface PluginAdapters {
-  getAllCandidates(): Promise<string[]>;
+  getOrganizationCollaborators(org: string): Promise<string[]>;
 }
 
 export type Context<T extends SupportedEvents = SupportedEvents> = BaseContext<T> & {

@@ -39,4 +39,26 @@ export async function setupTests() {
     assignees: [],
     updated_at: new Date().toISOString(),
   });
+
+  db.issue.create({
+    ...issueTemplate,
+    id: 3,
+    number: 3,
+    owner: "ubiquity-os",
+    assignees: [
+      {
+        login: "user1",
+      },
+    ],
+    assignee: {
+      ...(issueTemplate.assignee as { [key: string]: unknown }),
+      login: "user1",
+    },
+    labels: [
+      {
+        name: "Time: 1 Day",
+      },
+    ],
+    updated_at: new Date().toISOString(),
+  });
 }

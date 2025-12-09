@@ -1,8 +1,8 @@
 import { BaseContext, PluginAdapters } from "../types/index";
-import { fetchSupabaseCandidates } from "./candidates";
+import { fetchOrganizationCollaborators } from "./collaborators";
 
 export function createAdapters(context: BaseContext): PluginAdapters {
   return {
-    getAllCandidates: () => fetchSupabaseCandidates(context.env, context.logger),
+    getOrganizationCollaborators: (org) => fetchOrganizationCollaborators(context, org),
   };
 }

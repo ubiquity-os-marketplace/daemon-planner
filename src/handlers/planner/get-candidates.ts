@@ -17,8 +17,20 @@ function normaliseCandidate(entry: unknown): string | null {
 }
 
 export async function getCandidateLogins(context: PlannerContext, repository: RepositoryRef, issue: PlannerIssue): Promise<string[]> {
-  const configuredCandidates = context.config.candidateLogins;
-  const baseCandidates = configuredCandidates.length > 0 ? configuredCandidates : await context.adapters.getAllCandidates();
+  const orgs = Array.from(new Set([repository.owner, ...context.config.organizations]));
+  const collected: string[] = [];
+
+  for (const org of orgs) {
+    const candidates = await context.adapters.getOrganizationCollaborators(org);
+
+    for (const login of candidates) {
+      if (!collected.includes(login)) {
+        collected.push(login);
+      }
+    }
+  }
+
+  const baseCandidates = collected;
 
   if (baseCandidates.length === 0) {
     return [];

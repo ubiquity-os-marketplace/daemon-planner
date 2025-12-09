@@ -6,7 +6,6 @@ export const pluginSettingsSchema = T.Object(
       default: ["ubiquity", "ubiquity-os", "ubiquity-os-marketplace"],
       minItems: 1,
     }),
-    candidateLogins: T.Array(T.String(), { default: [] }),
     dailyCapacityHours: T.Number({ default: 6, minimum: 1 }),
     planningHorizonDays: T.Number({ default: 5, minimum: 1 }),
     reviewBufferHours: T.Number({ default: 2, minimum: 0 }),

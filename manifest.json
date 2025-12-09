@@ -13,12 +13,6 @@
         },
         "default": ["ubiquity", "ubiquity-os", "ubiquity-os-marketplace"]
       },
-      "candidateLogins": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
       "dailyCapacityHours": {
         "type": "number",
         "default": 6
