@@ -30,6 +30,7 @@ export async function planAssignment(context: PlannerContext, repository: Reposi
   const existingAssignees = currentAssignees(issue);
 
   if (existingAssignees.length > 0) {
+    context.logger.debug("Ignoring the issue because it already has users assigned", { existingAssignees, repository });
     return;
   }
 

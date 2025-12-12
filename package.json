@@ -25,8 +25,8 @@
     "test": "jest --setupFiles dotenv/config --coverage",
     "worker": "wrangler dev --env dev --port 4000",
     "generate": "dotenv -- bun run-p generate:*",
-    "generate:text-vector-embeddings": "bun x openapi-typescript ${MATCHMAKING_ENDPOINT}/openapi --output src/types/generated/openapi.ts",
-    "generate:command-start-stop": "bun x openapi-typescript ${START_STOP_ENDPOINT}/openapi --output src/types/generated/openapi.ts",
+    "generate:text-vector-embeddings": "bun x openapi-typescript ${MATCHMAKING_ENDPOINT}/openapi --output src/types/generated/matchmaking.ts",
+    "generate:command-start-stop": "bun x openapi-typescript ${START_STOP_ENDPOINT}/openapi --output src/types/generated/start-stop.ts",
     "prepare": "bun run generate:openapi-types && husky"
   },
   "keywords": [

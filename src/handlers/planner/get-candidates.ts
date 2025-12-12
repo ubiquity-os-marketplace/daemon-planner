@@ -1,3 +1,4 @@
+import { operations } from "../../types/generated/matchmaking";
 import { PlannerContext, PlannerIssue, RepositoryRef } from "./types";
 
 function normaliseCandidate(entry: unknown): string | null {
@@ -43,25 +44,21 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
   }
 
   try {
+    const queryParams: operations["getRecommendations"]["parameters"]["query"] = {
+      issueUrls: [`https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`],
+    };
+    const body = new URLSearchParams();
+    for (const [key, value] of Object.entries(queryParams)) {
+      for (const item of Array.isArray(value) ? value : [value]) {
+        body.append(key, item);
+      }
+    }
     const response = await fetch(endpoint, {
-      method: "POST",
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        repository,
-        issue: {
-          number: issue.number,
-          labels: (issue.labels ?? []).map((entry) => {
-            if (typeof entry === "string") {
-              return entry;
-            }
-
-            return entry?.name ?? String();
-          }),
-        },
-        candidates: baseCandidates,
-      }),
+      body: body,
     });
 
     if (!response.ok) {
@@ -69,7 +66,7 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
       return baseCandidates;
     }
 
-    const payload = await response.json();
+    const payload: operations["getRecommendations"]["responses"]["200"]["content"]["application/json"] = await response.json();
     const candidates = Array.isArray(payload?.candidates) ? payload.candidates : payload;
 
     const ranked = (Array.isArray(candidates) ? candidates : []).map(normaliseCandidate).filter((login): login is string => Boolean(login));
