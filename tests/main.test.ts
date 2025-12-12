@@ -30,7 +30,12 @@ describe("Plugin tests", () => {
 
   it("Should serve the manifest file", async () => {
     const worker = (await import("../src/worker")).default;
-    const response = await worker.fetch(new Request("http://localhost/manifest.json"), {});
+    const response = await worker.fetch(new Request("http://localhost/manifest.json"), {
+      MATCHMAKING_ENDPOINT: "endpoint",
+      START_STOP_ENDPOINT: "endpoint",
+      APP_ID: "1234",
+      APP_PRIVATE_KEY: "private_key",
+    });
     const content = await response.json();
     expect(content).toEqual(manifest);
   });

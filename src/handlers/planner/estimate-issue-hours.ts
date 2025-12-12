@@ -49,7 +49,7 @@ function parseDurationHours(value: string, config: PluginSettings): number | nul
 }
 
 export function estimateIssueHours(issue: PlannerIssue, config: PluginSettings): number | null {
-  const labels = issue.labels ?? [];
+  const labels = (issue.labels?.filter((label) => !!label) as Array<string | PlannerLabel>) ?? [];
   const timeLabel = labels.map(labelName).find((value) => value.toLowerCase().startsWith("time:"));
 
   if (!timeLabel) {

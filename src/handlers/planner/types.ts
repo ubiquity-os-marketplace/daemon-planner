@@ -17,8 +17,8 @@ export interface PlannerLabel {
 
 export interface PlannerIssue {
   number: number;
-  labels?: Array<PlannerLabel | string> | null;
-  assignees?: PlannerUser[] | null;
+  labels?: Array<PlannerLabel | string | null> | null;
+  assignees?: (PlannerUser | null)[] | null;
   assignee?: PlannerUser | null;
   updated_at?: string | null;
 }

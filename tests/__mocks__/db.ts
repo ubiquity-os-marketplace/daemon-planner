@@ -12,7 +12,7 @@ export const db = factory({
   },
   issue: {
     id: primaryKey(Number),
-    assignees: Array,
+    assignees: () => [Object()],
     html_url: String,
     repository_url: String,
     state: String,
