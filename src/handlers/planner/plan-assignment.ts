@@ -1,3 +1,4 @@
+import { operations } from "../../types/generated/start-stop";
 import { calculateLoad } from "./calculate-load";
 import { estimateIssueHours } from "./estimate-issue-hours";
 import { getAssignedIssues } from "./get-assigned-issues";
@@ -23,7 +24,7 @@ function sortByWorkload(collection: CandidateScore[]): CandidateScore[] {
 
 export async function planAssignment(context: PlannerContext, repository: RepositoryRef, issue: PlannerIssue): Promise<void> {
   if (!issue?.number) {
-    context.logger.error("Issue payload missing number");
+    context.logger.error("Issue number missing from the payload");
     return;
   }
 
@@ -62,20 +63,35 @@ export async function planAssignment(context: PlannerContext, repository: Reposi
   const chosen = (available.length > 0 ? available : fallback)[0];
 
   if (!chosen) {
+    context.logger.warn(`Could not assign ${repository.owner}/${repository.name}#${issue.number} to any user`);
     return;
   }
 
-  await fetch(context.env.START_STOP_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      repository,
-      issue: { number: issue.number },
-      command: "assign",
-      assignee: chosen.login,
-    }),
-  });
-  context.logger.ok(`Assigned ${repository.owner}/${repository.name}#${issue.number} to ${chosen.login}`);
+  const body: NonNullable<operations["postStart"]["requestBody"]>["content"]["application/json"] = {
+    issueUrl: `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`,
+    userId: chosen.login,
+  };
+  try {
+    const tokenInfo = (await context.octokit.auth({ type: "installation" })) as { token: string };
+    const response = await fetch(`${context.env.START_STOP_ENDPOINT}/start`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${tokenInfo.token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      context.logger.warn(`Failed to assign ${repository.owner}/${repository.name}#${issue.number} to ${chosen.login}`, {
+        response: response.status,
+        status: response.statusText,
+      });
+    } else {
+      context.logger.ok(`Assigned ${repository.owner}/${repository.name}#${issue.number} to ${chosen.login}`, {
+        response: await response.json(),
+      });
+    }
+  } catch (err) {
+    context.logger.error(`Failed to assign ${repository.owner}/${repository.name}#${issue.number} to ${chosen.login}`, { err: String(err) });
+  }
 }

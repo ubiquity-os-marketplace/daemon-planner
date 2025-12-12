@@ -17,7 +17,7 @@ function normaliseCandidate(entry: unknown): string | null {
   return null;
 }
 
-export async function getCandidateLogins(context: PlannerContext, repository: RepositoryRef, issue: PlannerIssue): Promise<string[]> {
+async function collectCandidates(context: PlannerContext, repository: RepositoryRef) {
   const orgs = Array.from(new Set([repository.owner, ...context.config.organizations]));
   const collected: string[] = [];
 
@@ -30,8 +30,11 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
       }
     }
   }
+  return collected;
+}
 
-  const baseCandidates = collected;
+export async function getCandidateLogins(context: PlannerContext, repository: RepositoryRef, issue: PlannerIssue): Promise<string[]> {
+  const baseCandidates = await collectCandidates(context, repository);
 
   if (baseCandidates.length === 0) {
     return [];
@@ -47,18 +50,17 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
     const queryParams: operations["getRecommendations"]["parameters"]["query"] = {
       issueUrls: [`https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`],
     };
-    const body = new URLSearchParams();
+    const params = new URLSearchParams();
     for (const [key, value] of Object.entries(queryParams)) {
       for (const item of Array.isArray(value) ? value : [value]) {
-        body.append(key, item);
+        params.append(key, item);
       }
     }
-    const response = await fetch(endpoint, {
+    const response = await fetch(`${endpoint}/recommendations?${params.toString()}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
-      body: body,
     });
 
     if (!response.ok) {
