@@ -48,19 +48,19 @@ function parseDurationHours(value: string, config: PluginSettings): number | nul
   return null;
 }
 
-export function estimateIssueHours(issue: PlannerIssue, config: PluginSettings): number {
+export function estimateIssueHours(issue: PlannerIssue, config: PluginSettings): number | null {
   const labels = issue.labels ?? [];
   const timeLabel = labels.map(labelName).find((value) => value.toLowerCase().startsWith("time:"));
 
   if (!timeLabel) {
-    return config.defaultEstimateHours;
+    return null;
   }
 
   const descriptor = timeLabel.split(":").slice(1).join(":").trim();
   const parsed = parseDurationHours(descriptor, config);
 
   if (parsed === null) {
-    return config.defaultEstimateHours;
+    return null;
   }
 
   return parsed;

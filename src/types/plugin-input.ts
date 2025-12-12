@@ -10,7 +10,6 @@ export const pluginSettingsSchema = T.Object(
     dailyCapacityHours: T.Number({ default: 6, minimum: 1, description: "The daily work capacity." }),
     planningHorizonDays: T.Number({ default: 5, minimum: 1 }),
     reviewBufferHours: T.Number({ default: 2, minimum: 0 }),
-    defaultEstimateHours: T.Number({ default: 4, minimum: 1 }),
     assignedTaskLimit: T.Number({ default: 1, minimum: 1 }),
   },
   { default: {} }

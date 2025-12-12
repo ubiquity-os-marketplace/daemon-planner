@@ -1,5 +1,5 @@
 import { operations } from "../../types/generated/start-stop";
-import { calculateLoad } from "./calculate-load";
+import { calculateWorkload } from "./calculate-workload";
 import { estimateIssueHours } from "./estimate-issue-hours";
 import { getAssignedIssues } from "./get-assigned-issues";
 import { getCandidateLogins } from "./get-candidates";
@@ -46,7 +46,7 @@ export async function planAssignment(context: PlannerContext, repository: Reposi
 
   for (const login of candidates) {
     const issues = await getAssignedIssues(context, login);
-    const load = calculateLoad(issues, context.config);
+    const load = calculateWorkload(issues, context.config);
     scores.push({ login, load });
   }
 
@@ -55,7 +55,12 @@ export async function planAssignment(context: PlannerContext, repository: Reposi
     return;
   }
 
-  const estimate = estimateIssueHours(issue, context.config) + context.config.reviewBufferHours;
+  const issueHours = estimateIssueHours(issue, context.config);
+  if (issueHours === null) {
+    context.logger.warn(`Could not estimate hours for ${repository.owner}/${repository.name}#${issue.number}`);
+    return;
+  }
+  const estimate = issueHours + context.config.reviewBufferHours;
   const capacity = context.config.dailyCapacityHours * context.config.planningHorizonDays;
 
   const available = sortByWorkload(scores.filter((entry) => entry.load + estimate <= capacity));
