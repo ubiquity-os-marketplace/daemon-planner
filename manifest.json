@@ -7,30 +7,37 @@
     "type": "object",
     "properties": {
       "organizations": {
+        "default": ["ubiquity", "ubiquity-os", "ubiquity-os-marketplace"],
+        "minItems": 1,
+        "description": "List of GitHub organizations to process issues for.",
         "type": "array",
         "items": {
           "type": "string"
-        },
-        "default": ["ubiquity", "ubiquity-os", "ubiquity-os-marketplace"]
+        }
       },
       "dailyCapacityHours": {
-        "type": "number",
-        "default": 6
+        "default": 6,
+        "minimum": 1,
+        "description": "The daily work capacity.",
+        "type": "number"
       },
       "planningHorizonDays": {
-        "type": "number",
-        "default": 5
+        "default": 5,
+        "minimum": 1,
+        "type": "number"
       },
       "reviewBufferHours": {
-        "type": "number",
-        "default": 2
+        "default": 2,
+        "minimum": 0,
+        "type": "number"
       },
-      "defaultEstimateHours": {
-        "type": "number",
-        "default": 4
+      "assignedTaskLimit": {
+        "default": 1,
+        "minimum": 1,
+        "type": "number"
       }
     }
   },
   "homepage_url": "https://comic-bee-miserably.ngrok-free.app",
-  "short_name": "Meniole/daemon-planner@development"
+  "short_name": "ubiquity-os-marketplace/daemon-planner@feat/planner"
 }
