@@ -1,6 +1,6 @@
 import { BaseContext } from "../types/index";
 
-function normaliseCollaborator(entry: unknown): string | null {
+function normalizeCollaborator(entry: unknown): string | null {
   if (typeof entry === "string") {
     return entry;
   }
@@ -23,7 +23,7 @@ export async function fetchOrganizationCollaborators(context: BaseContext, org: 
       per_page: 100,
     });
 
-    return collaborators.map(normaliseCollaborator).filter((login): login is string => Boolean(login));
+    return collaborators.map(normalizeCollaborator).filter((login): login is string => Boolean(login));
   } catch (error) {
     const cause = error instanceof Error ? error : new Error(String(error));
     context.logger.error(`Failed to fetch collaborators for ${org}`, { error: cause });

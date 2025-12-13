@@ -1,7 +1,7 @@
 import { operations } from "../../types/generated/matchmaking";
 import { PlannerContext, PlannerIssue, RepositoryRef } from "./types";
 
-function normaliseCandidate(entry: unknown): string | null {
+function normalizeCandidate(entry: unknown): string | null {
   if (typeof entry === "string") {
     return entry;
   }
@@ -71,7 +71,7 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
     const payload: operations["getRecommendations"]["responses"]["200"]["content"]["application/json"] = await response.json();
     const candidates = Array.isArray(payload?.candidates) ? payload.candidates : payload;
 
-    const ranked = (Array.isArray(candidates) ? candidates : []).map(normaliseCandidate).filter((login): login is string => Boolean(login));
+    const ranked = (Array.isArray(candidates) ? candidates : []).map(normalizeCandidate).filter((login): login is string => Boolean(login));
 
     const allowed = new Set(baseCandidates);
     const ordered = ranked.filter((login) => allowed.has(login));
