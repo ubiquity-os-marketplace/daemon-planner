@@ -16,6 +16,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - name: Run code generation
+        run: |
+          bun install
+          bun run generate
       - uses: ubiquity-os/deno-plugin-adapter@main
         id: adapter
         with:
