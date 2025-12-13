@@ -25,9 +25,10 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
     return [];
   }
 
-  const endpoint = context.env.MATCHMAKING_ENDPOINT;
+  const matchmakingEndpoint = context.env.MATCHMAKING_ENDPOINT;
+  const startStopEndpoint = context.env.START_STOP_ENDPOINT;
 
-  if (!endpoint) {
+  if (!matchmakingEndpoint) {
     return baseCandidates;
   }
 
@@ -41,7 +42,7 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
         params.append(key, item);
       }
     }
-    const response = await fetch(`${endpoint}/recommendations?${params.toString()}`, {
+    const response = await fetch(`${matchmakingEndpoint}/recommendations?${params.toString()}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -68,7 +69,7 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
           userId: user,
           issueUrl: `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`,
         };
-        return fetch(`${endpoint}/start?${new URLSearchParams(queryParams).toString()}`, {
+        return fetch(`${startStopEndpoint}/start?${new URLSearchParams(queryParams).toString()}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

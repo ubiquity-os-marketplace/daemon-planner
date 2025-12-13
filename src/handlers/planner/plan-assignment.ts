@@ -90,6 +90,7 @@ export async function planAssignment(context: PlannerContext, repository: Reposi
       context.logger.warn(`Failed to assign ${repository.owner}/${repository.name}#${issue.number} to ${chosen.login}`, {
         response: response.status,
         status: response.statusText,
+        url: `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`,
       });
     } else {
       context.logger.ok(`Assigned ${repository.owner}/${repository.name}#${issue.number} to ${chosen.login}`, {
@@ -97,6 +98,9 @@ export async function planAssignment(context: PlannerContext, repository: Reposi
       });
     }
   } catch (err) {
-    context.logger.error(`Failed to assign ${repository.owner}/${repository.name}#${issue.number} to ${chosen.login}`, { err: String(err) });
+    context.logger.error(`Failed to assign ${repository.owner}/${repository.name}#${issue.number} to ${chosen.login}`, {
+      err: String(err),
+      url: `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`,
+    });
   }
 }
