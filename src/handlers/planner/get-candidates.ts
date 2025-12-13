@@ -1,4 +1,5 @@
 import { operations } from "../../types/generated/matchmaking";
+import { operations as StartStopOperations } from "../../types/generated/start-stop";
 import { PlannerContext, PlannerIssue, RepositoryRef } from "./types";
 
 function normalizeCandidate(entry: unknown): string | null {
@@ -60,6 +61,23 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
     const allowed = new Set(baseCandidates);
     const ordered = ranked.filter((login) => allowed.has(login));
     const remaining = baseCandidates.filter((login) => !ordered.includes(login));
+    const tokenInfo = (await context.octokit.auth({ type: "installation" })) as { token: string };
+    const allowedToStart = await Promise.all(
+      remaining.map((user) => {
+        const queryParams: StartStopOperations["getStart"]["parameters"]["query"] = {
+          userId: user,
+          issueUrl: `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`,
+        };
+        return fetch(`${endpoint}/start?${new URLSearchParams(queryParams).toString()}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${tokenInfo.token}`,
+          },
+        });
+      })
+    );
+    console.log(allowedToStart);
 
     return [...ordered, ...remaining];
   } catch (err) {
