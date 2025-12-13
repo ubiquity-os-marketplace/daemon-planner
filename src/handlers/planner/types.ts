@@ -1,6 +1,6 @@
 import { Context } from "../../types/index";
 
-export type PlannerContext = Pick<Context, "config" | "octokit" | "logger" | "env" | "adapters">;
+export type PlannerContext = Pick<Context, "config" | "octokit" | "logger" | "env" | "collaborators">;
 
 export interface RepositoryRef {
   owner: string;

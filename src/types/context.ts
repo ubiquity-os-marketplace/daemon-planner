@@ -1,6 +1,7 @@
 import { Context as PluginContext } from "@ubiquity-os/plugin-sdk";
 import { Env } from "./env";
 import { PluginSettings } from "./plugin-input";
+import type { CollaboratorPool } from "../collaborators/collaborator-pool";
 
 export type SupportedEvents = "issues.opened" | "issues.reopened";
 
@@ -12,4 +13,5 @@ export interface PluginAdapters {
 
 export type Context<T extends SupportedEvents = SupportedEvents> = BaseContext<T> & {
   adapters: PluginAdapters;
+  collaborators: CollaboratorPool;
 };
