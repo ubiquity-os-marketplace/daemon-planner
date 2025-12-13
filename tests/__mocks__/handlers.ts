@@ -6,26 +6,47 @@ import issueTemplate from "./issue-template";
  */
 export const handlers = [
   http.get("https://api.github.com/orgs/:org/members", () => HttpResponse.json(db.users.getAll())),
+  http.get("https://api.github.com/installation/repositories", () =>
+    HttpResponse.json({ total_count: db.repo.getAll().length, repositories: db.repo.getAll() })
+  ),
   http.post("https://text-vector-embeddings-mai.deno.dev", async ({ request }) => {
     const body = await request.json();
     const candidates = Array.isArray((body as { candidates?: unknown }).candidates) ? (body as { candidates?: unknown }).candidates : [];
     return HttpResponse.json({ candidates });
   }),
-  http.post("https://command-start-stop-main.deno.dev", async ({ request }) => {
-    const body = (await request.json()) as {
-      repository?: { owner?: string; name?: string };
-      issue?: { number?: number };
-      assignee?: string;
-    };
+  http.get("https://text-vector-embeddings-mai.deno.dev/recommendations", () => HttpResponse.json({ candidates: ["user2", "user1"] })),
+  http.get("https://command-start-stop-main.deno.dev/start", ({ request }) => {
+    const url = new URL(request.url);
+    const userId = url.searchParams.get("userId");
+    const issueUrl = url.searchParams.get("issueUrl");
 
-    const owner = body.repository?.owner;
-    const repo = body.repository?.name;
-    const issueNumber = body.issue?.number;
-    const assignee = body.assignee;
-
-    if (!owner || !repo || !issueNumber || !assignee) {
+    if (!userId || !issueUrl) {
       return new HttpResponse(null, { status: 400 });
     }
+
+    return HttpResponse.json({ ok: true });
+  }),
+  http.post("https://command-start-stop-main.deno.dev/start", async ({ request }) => {
+    const body = (await request.json()) as {
+      issueUrl?: string;
+      userId?: string;
+    };
+
+    const issueUrl = body.issueUrl;
+    const userId = body.userId;
+
+    if (!issueUrl || !userId) {
+      return new HttpResponse(null, { status: 400 });
+    }
+
+    const match = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/issues\/(\d+)$/.exec(issueUrl);
+    if (!match) {
+      return new HttpResponse(null, { status: 400 });
+    }
+
+    const owner = match[1];
+    const repo = match[2];
+    const issueNumber = Number(match[3]);
 
     const issue = db.issue.findFirst({
       where: {
@@ -40,7 +61,7 @@ export const handlers = [
     }
 
     const existing = (issue.assignees as { login: string }[] | undefined) ?? [];
-    const next = Array.from(new Set([...existing.map((entry) => entry.login), assignee])).map((login) => ({ login }));
+    const next = Array.from(new Set([...existing.map((entry) => entry.login), userId])).map((login) => ({ login }));
 
     db.issue.update({
       where: {
@@ -55,7 +76,19 @@ export const handlers = [
       },
     });
 
-    return HttpResponse.json({ ok: true, assignees: next });
+    return HttpResponse.json({
+      ok: true,
+      content: "",
+      metadata: {
+        deadline: null,
+        isTaskStale: false,
+        wallet: "",
+        toAssign: next.map((entry) => entry.login),
+        senderRole: "",
+        consideredCount: next.length,
+        assignedIssues: [],
+      },
+    });
   }),
   // get org repos
   http.get("https://api.github.com/orgs/:org/repos", ({ params: { org } }: { params: { org: string } }) =>

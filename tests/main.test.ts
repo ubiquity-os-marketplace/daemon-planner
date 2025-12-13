@@ -3,6 +3,7 @@ import { drop } from "@mswjs/data";
 import { customOctokit as Octokit } from "@ubiquity-os/plugin-sdk/octokit";
 import { Logs } from "@ubiquity-os/ubiquity-os-logger";
 import dotenv from "dotenv";
+import { http, HttpResponse } from "msw";
 import manifest from "../manifest.json";
 import { runPlugin } from "../src";
 import { BaseContext, Env, PluginSettings } from "../src/types";
@@ -13,6 +14,7 @@ import { STRINGS } from "./__mocks__/strings";
 
 dotenv.config();
 const octokit = new Octokit();
+(octokit as unknown as { auth: (...args: unknown[]) => Promise<{ token: string }> }).auth = async () => ({ token: "test-token" });
 
 beforeAll(() => {
   server.listen();
@@ -47,6 +49,28 @@ describe("Plugin tests", () => {
 
     const issue = db.issue.findFirst({ where: { number: { equals: 1 } } });
     expect(issue?.assignees?.[0]?.login).toBe("user2");
+  });
+
+  it("Should exclude candidates that are not allowed to start", async () => {
+    server.use(
+      http.get("https://command-start-stop-main.deno.dev/start", ({ request }) => {
+        const url = new URL(request.url);
+        const userId = url.searchParams.get("userId");
+
+        if (userId === "user2") {
+          return HttpResponse.json({ ok: false });
+        }
+
+        return HttpResponse.json({ ok: true });
+      })
+    );
+
+    const context = createIssueOpenedContext();
+
+    await runPlugin(context);
+
+    const issue = db.issue.findFirst({ where: { number: { equals: 1 } } });
+    expect(issue?.assignees?.[0]?.login).toBe("user1");
   });
 
   it("Should assign unowned issues across configured organizations during the daily schedule", async () => {

@@ -28,13 +28,47 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
   const matchmakingEndpoint = context.env.MATCHMAKING_ENDPOINT;
   const startStopEndpoint = context.env.START_STOP_ENDPOINT;
 
+  const issueUrl = `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`;
+  const tokenInfo = (await context.octokit.auth({ type: "installation" })) as { token: string };
+
+  const startAllowed = await Promise.all(
+    baseCandidates.map(async (userId) => {
+      const queryParams: StartStopOperations["getStart"]["parameters"]["query"] = {
+        userId,
+        issueUrl,
+      };
+
+      const response = await fetch(`${startStopEndpoint}/start?${new URLSearchParams(queryParams).toString()}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${tokenInfo.token}`,
+        },
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const payload = (await response.json()) as StartStopOperations["getStart"]["responses"]["200"]["content"]["application/json"];
+
+      return payload.ok ? userId : null;
+    })
+  );
+
+  const allowedCandidates = startAllowed.filter((login): login is string => Boolean(login));
+
+  if (allowedCandidates.length === 0) {
+    return [];
+  }
+
   if (!matchmakingEndpoint) {
-    return baseCandidates;
+    return allowedCandidates;
   }
 
   try {
     const queryParams: operations["getRecommendations"]["parameters"]["query"] = {
-      issueUrls: [`https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`],
+      issueUrls: [issueUrl],
     };
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(queryParams)) {
@@ -59,30 +93,20 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
 
     const ranked = (Array.isArray(candidates) ? candidates : []).map(normalizeCandidate).filter((login): login is string => Boolean(login));
 
-    const allowed = new Set(baseCandidates);
-    const ordered = ranked.filter((login) => allowed.has(login));
-    const remaining = baseCandidates.filter((login) => !ordered.includes(login));
-    const tokenInfo = (await context.octokit.auth({ type: "installation" })) as { token: string };
-    const allowedToStart = await Promise.all(
-      remaining.map((user) => {
-        const queryParams: StartStopOperations["getStart"]["parameters"]["query"] = {
-          userId: user,
-          issueUrl: `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`,
-        };
-        return fetch(`${startStopEndpoint}/start?${new URLSearchParams(queryParams).toString()}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${tokenInfo.token}`,
-          },
-        });
-      })
-    );
-    console.log(allowedToStart);
+    const allowed = new Set(allowedCandidates);
+    const seen = new Set<string>();
+    const ordered = ranked.filter((login) => {
+      if (!allowed.has(login) || seen.has(login)) {
+        return false;
+      }
+      seen.add(login);
+      return true;
+    });
+    const remaining = allowedCandidates.filter((login) => !seen.has(login));
 
     return [...ordered, ...remaining];
   } catch (err) {
     context.logger.error("Failed to query matchmaking endpoint", { err });
-    return baseCandidates;
+    return allowedCandidates;
   }
 }
