@@ -19,7 +19,6 @@ plugins:
       dailyCapacityHours: 6
       planningHorizonDays: 5
       reviewBufferHours: 2
-      defaultEstimateHours: 4
 ```
 
 ### Key Settings
@@ -34,8 +33,8 @@ Candidates are sourced automatically from each configured organisation's collabo
 
 Set these variables wherever the worker/action executes:
 
-- `MATCHMAKING_ENDPOINT` *(optional)*: REST endpoint that ranks candidates for a task.
-- `START_STOP_ENDPOINT` *(optional)*: Endpoint invoked after assignments to orchestrate auxiliary workflows.
+- `MATCHMAKING_ENDPOINT` _(optional)_: REST endpoint that ranks candidates for a task.
+- `START_STOP_ENDPOINT` _(optional)_: Endpoint invoked after assignments to orchestrate auxiliary workflows.
   OpenAPI specs are read directly from each endpoint's `/openapi` path during the `prepare` step to generate types; no additional keys are required.
 
 ## Development
