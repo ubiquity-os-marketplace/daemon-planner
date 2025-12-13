@@ -35,6 +35,9 @@ export async function setupTests() {
       {
         name: "Time: <4 Hours",
       },
+      {
+        name: "Priority: 1 (Normal)",
+      },
     ],
     assignees: [],
     updated_at: new Date().toISOString(),
