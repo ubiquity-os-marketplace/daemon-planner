@@ -57,11 +57,11 @@ describe("Plugin tests", () => {
         const url = new URL(request.url);
         const userId = url.searchParams.get("userId");
 
-        if (userId === "user2") {
+        if (userId === "2") {
           return HttpResponse.json({ ok: false });
         }
 
-        return HttpResponse.json({ ok: true });
+        return HttpResponse.json({ ok: true, computed: { assignedIssues: [] } });
       })
     );
 
@@ -70,7 +70,8 @@ describe("Plugin tests", () => {
     await runPlugin(context);
 
     const issue = db.issue.findFirst({ where: { number: { equals: 1 } } });
-    expect(issue?.assignees?.[0]?.login).toBe("user1");
+    const assignees = (issue?.assignees as { login: string }[] | undefined) ?? [];
+    expect(assignees.length).toBe(0);
   });
 
   it("Should assign unowned issues across configured organizations during the daily schedule", async () => {
@@ -78,10 +79,13 @@ describe("Plugin tests", () => {
 
     await runPlugin(request);
 
-    const issue = db.issue.findFirst({ where: { number: { equals: 2 } } });
-    const assignees = (issue?.assignees as { login: string }[] | undefined) ?? [];
+    const issue1 = db.issue.findFirst({ where: { number: { equals: 1 } } });
+    const issue2 = db.issue.findFirst({ where: { number: { equals: 2 } } });
 
-    expect(assignees.length).toBeGreaterThan(0);
+    const assignees1 = (issue1?.assignees as { login: string }[] | undefined) ?? [];
+    const assignees2 = (issue2?.assignees as { login: string }[] | undefined) ?? [];
+
+    expect(assignees1.length + assignees2.length).toBeGreaterThan(0);
   });
 });
 

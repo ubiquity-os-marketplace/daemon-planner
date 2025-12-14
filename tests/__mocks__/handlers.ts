@@ -24,7 +24,12 @@ export const handlers = [
       return new HttpResponse(null, { status: 400 });
     }
 
-    return HttpResponse.json({ ok: true });
+    return HttpResponse.json({
+      ok: true,
+      computed: {
+        assignedIssues: [],
+      },
+    });
   }),
   http.post("https://command-start-stop-main.deno.dev/start", async ({ request }) => {
     const body = (await request.json()) as {

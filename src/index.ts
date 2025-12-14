@@ -9,9 +9,16 @@ import { isIssueOpenedEvent, isIssueReopenedEvent } from "./types/typeguards";
 export async function runPlugin(baseContext: BaseContext) {
   const adapters = createAdapters(baseContext);
 
+  const collaborators = new CollaboratorPool({
+    adapters,
+    config: baseContext.config,
+    logger: baseContext.logger,
+    octokit: baseContext.octokit,
+  });
+
   const context = Object.assign(baseContext, {
     adapters,
-    collaborators: new CollaboratorPool(adapters),
+    collaborators,
     tasks: new TaskPriorityPool(baseContext),
   }) as Context;
 

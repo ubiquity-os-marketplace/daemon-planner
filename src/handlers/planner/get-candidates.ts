@@ -39,7 +39,6 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
         issueUrl,
       };
 
-      console.log(tokenInfo);
       const response = await fetch(`${startStopEndpoint}/start?${new URLSearchParams(queryParams).toString()}`, {
         method: "GET",
         headers: {
@@ -55,7 +54,15 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
 
       const payload = (await response.json()) as StartStopOperations["getStart"]["responses"]["200"]["content"]["application/json"];
 
-      return payload.ok ? username : null;
+      if (!payload.ok) {
+        return null;
+      }
+
+      if (!payload.computed || !Array.isArray(payload.computed.assignedIssues)) {
+        throw new Error("Start/stop endpoint returned an invalid payload");
+      }
+
+      return payload.computed.assignedIssues.length === 0 ? username : null;
     })
   );
 
