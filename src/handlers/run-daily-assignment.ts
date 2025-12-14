@@ -1,10 +1,17 @@
 import { operations } from "../types/generated/start-stop";
 import { Context } from "../types/index";
+import { getUserId } from "../github/get-user-id";
 import { estimateIssueHours } from "./planner/estimate-issue-hours";
 
 export async function runDailyAssignment(context: Context) {
   const tasks = await context.tasks.getSortedAvailableTasks();
-  const users = await context.collaborators.getAllAvailableLogins();
+
+  if (tasks.length === 0) {
+    return;
+  }
+
+  const probeIssueUrl = `https://github.com/${tasks[0].repository.owner}/${tasks[0].repository.name}/issues/${tasks[0].issue.number}`;
+  const users = await context.collaborators.getAllAvailableLogins(probeIssueUrl);
 
   if (tasks.length === 0 || users.length === 0) {
     return;
@@ -43,7 +50,7 @@ export async function runDailyAssignment(context: Context) {
       const issueUrl = `https://github.com/${task.repository.owner}/${task.repository.name}/issues/${task.issue.number}`;
       const body: NonNullable<operations["postStart"]["requestBody"]>["content"]["application/json"] = {
         issueUrl,
-        userId: login,
+        userId: await getUserId(context.octokit, login),
       };
 
       try {

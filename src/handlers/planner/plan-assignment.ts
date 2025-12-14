@@ -1,4 +1,5 @@
 import { operations } from "../../types/generated/start-stop";
+import { getUserId } from "../../github/get-user-id";
 import { calculateWorkload } from "./calculate-workload";
 import { estimateIssueHours } from "./estimate-issue-hours";
 import { getAssignedIssues } from "./get-assigned-issues";
@@ -44,8 +45,10 @@ export async function planAssignment(context: PlannerContext, repository: Reposi
 
   const scores: CandidateScore[] = [];
 
+  const issueUrl = `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`;
+
   for (const login of candidates) {
-    const issues = await getAssignedIssues(context, login);
+    const issues = await getAssignedIssues(context, login, issueUrl);
     const load = calculateWorkload(issues, context.config);
     scores.push({ login, load });
   }
@@ -73,8 +76,8 @@ export async function planAssignment(context: PlannerContext, repository: Reposi
   }
 
   const body: NonNullable<operations["postStart"]["requestBody"]>["content"]["application/json"] = {
-    issueUrl: `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`,
-    userId: chosen.login,
+    issueUrl,
+    userId: await getUserId(context.octokit, chosen.login),
   };
   try {
     const tokenInfo = (await context.octokit.auth({ type: "installation" })) as { token: string };

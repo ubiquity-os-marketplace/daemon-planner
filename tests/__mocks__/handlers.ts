@@ -24,10 +24,21 @@ export const handlers = [
       return new HttpResponse(null, { status: 400 });
     }
 
+    const numericId = Number(userId);
+    const login = Number.isFinite(numericId) ? db.users.findFirst({ where: { id: { equals: numericId } } })?.login ?? userId : userId;
+
+    const assigned = db.issue
+      .findMany({ where: { state: { equals: "open" } } })
+      .filter((issue) => {
+        const list = (issue.assignees as { login: string }[] | undefined) ?? [];
+        return list.some((entry) => entry.login === login);
+      })
+      .map((issue) => ({ title: issue.title as string, html_url: issue.html_url as string }));
+
     return HttpResponse.json({
       ok: true,
       computed: {
-        assignedIssues: [],
+        assignedIssues: assigned,
       },
     });
   }),
@@ -43,6 +54,9 @@ export const handlers = [
     if (!issueUrl || !userId) {
       return new HttpResponse(null, { status: 400 });
     }
+
+    const numericId = Number(userId);
+    const login = Number.isFinite(numericId) ? db.users.findFirst({ where: { id: { equals: numericId } } })?.login ?? userId : userId;
 
     const match = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/issues\/(\d+)$/.exec(issueUrl);
     if (!match) {
@@ -66,7 +80,7 @@ export const handlers = [
     }
 
     const existing = (issue.assignees as { login: string }[] | undefined) ?? [];
-    const next = Array.from(new Set([...existing.map((entry) => entry.login), userId])).map((login) => ({ login }));
+    const next = Array.from(new Set([...existing.map((entry) => entry.login), login])).map((login) => ({ login }));
 
     db.issue.update({
       where: {

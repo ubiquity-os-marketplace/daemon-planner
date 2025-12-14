@@ -12,6 +12,7 @@ export async function runPlugin(baseContext: BaseContext) {
   const collaborators = new CollaboratorPool({
     adapters,
     config: baseContext.config,
+    env: baseContext.env,
     logger: baseContext.logger,
     octokit: baseContext.octokit,
   });

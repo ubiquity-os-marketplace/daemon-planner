@@ -17,3 +17,6 @@ script.ts
 .wrangler
 test-dashboard.md
 src/types/generated
+
+# JetBrains
+.idea/

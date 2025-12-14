@@ -1,29 +1,21 @@
 import { Logs } from "@ubiquity-os/ubiquity-os-logger";
-import { listAssignedIssues } from "../github/list-assigned-issues";
+import { getStartStatus } from "../start-stop/get-start-status";
 import { Context, PluginAdapters } from "../types/index";
 
 type UserOrgMap = Map<string, string[]>;
 
-type OctokitLike = {
-  rest: {
-    apps: { listReposAccessibleToInstallation: unknown };
-    issues: { listForRepo: unknown };
-  };
-  paginate: <T>(method: unknown, params: Record<string, unknown>) => Promise<T[]>;
-};
-
 type CollaboratorPoolContext = {
   adapters: PluginAdapters;
-  octokit: OctokitLike;
+  octokit: Context["octokit"];
   logger: Logs;
   config: Context["config"];
+  env: Context["env"];
 };
 
 export class CollaboratorPool {
   private readonly _context: CollaboratorPoolContext;
   private readonly _orgCache = new Map<string, Promise<string[]>>();
   private _orgMembers: Promise<UserOrgMap> | null = null;
-  private _availableByOrg: Promise<UserOrgMap> | null = null;
   private readonly _availability = new Map<string, Promise<boolean>>();
 
   constructor(context: CollaboratorPoolContext) {
@@ -79,7 +71,7 @@ export class CollaboratorPool {
     return members.includes(login);
   }
 
-  private _isGloballyAvailable(login: string): Promise<boolean> {
+  private _isGloballyAvailable(login: string, issueUrl: string): Promise<boolean> {
     const normalized = login.trim();
     if (!normalized) {
       return Promise.resolve(false);
@@ -90,57 +82,21 @@ export class CollaboratorPool {
       return cached;
     }
 
-    const pending = listAssignedIssues(this._context.octokit, this._context.logger, this._context.config.organizations, normalized).then(
-      (issues) => issues.length === 0
-    );
+    const pending = getStartStatus(this._context, normalized, issueUrl).then((payload) => payload?.computed.assignedIssues.length === 0);
 
     this._availability.set(normalized, pending);
     return pending;
   }
 
-  async getAvailableUsersByOrganization(): Promise<UserOrgMap> {
-    if (this._availableByOrg) {
-      return this._availableByOrg;
-    }
-
-    this._availableByOrg = (async () => {
-      const usersByOrg = await this.getUsersByOrganization();
-      const result: UserOrgMap = new Map();
-
-      const uniqueUsers = new Set<string>();
-      for (const members of usersByOrg.values()) {
-        for (const login of members) {
-          uniqueUsers.add(login);
-        }
-      }
-
-      const availability = new Map<string, boolean>();
-      await Promise.all(
-        [...uniqueUsers].map(async (login) => {
-          availability.set(login, await this._isGloballyAvailable(login));
-        })
-      );
-
-      for (const [org, members] of usersByOrg.entries()) {
-        result.set(
-          org,
-          members.filter((login) => availability.get(login) === true)
-        );
-      }
-
-      return result;
-    })();
-
-    return this._availableByOrg;
+  async getAvailableCollaborators(org: string, issueUrl: string): Promise<string[]> {
+    const byOrg = await this.getUsersByOrganization();
+    const members = byOrg.get(org.trim()) ?? [];
+    const allowed = await Promise.all(members.map(async (login) => ((await this._isGloballyAvailable(login, issueUrl)) ? login : null)));
+    return allowed.filter((login): login is string => Boolean(login));
   }
 
-  async getAvailableCollaborators(org: string): Promise<string[]> {
-    const byOrg = await this.getAvailableUsersByOrganization();
-    return byOrg.get(org.trim()) ?? [];
-  }
-
-  async getAllAvailableLogins(): Promise<string[]> {
-    const byOrg = await this.getAvailableUsersByOrganization();
+  async getAllAvailableLogins(issueUrl: string): Promise<string[]> {
+    const byOrg = await this.getUsersByOrganization();
     const users = new Set<string>();
     for (const list of byOrg.values()) {
       for (const login of list) {
@@ -148,6 +104,8 @@ export class CollaboratorPool {
       }
     }
 
-    return [...users].sort((a, b) => a.localeCompare(b));
+    const allowed = await Promise.all([...users].map(async (login) => ((await this._isGloballyAvailable(login, issueUrl)) ? login : null)));
+
+    return allowed.filter((login): login is string => Boolean(login)).sort((a, b) => a.localeCompare(b));
   }
 }

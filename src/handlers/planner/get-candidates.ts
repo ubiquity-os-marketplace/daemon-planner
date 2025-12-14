@@ -1,5 +1,4 @@
 import { operations } from "../../types/generated/matchmaking";
-import { operations as StartStopOperations } from "../../types/generated/start-stop";
 import { PlannerContext, PlannerIssue, RepositoryRef } from "./types";
 
 function normalizeCandidate(entry: unknown): string | null {
@@ -19,61 +18,17 @@ function normalizeCandidate(entry: unknown): string | null {
 }
 
 export async function getCandidateLogins(context: PlannerContext, repository: RepositoryRef, issue: PlannerIssue): Promise<string[]> {
-  const baseCandidates = await context.collaborators.getAvailableCollaborators(repository.owner);
+  const issueUrl = `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`;
+  const baseCandidates = await context.collaborators.getAvailableCollaborators(repository.owner, issueUrl);
 
   if (baseCandidates.length === 0) {
     return [];
   }
 
   const matchmakingEndpoint = context.env.MATCHMAKING_ENDPOINT;
-  const startStopEndpoint = context.env.START_STOP_ENDPOINT;
-
-  const issueUrl = `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`;
-  const tokenInfo = (await context.octokit.auth()) as { token: string };
-
-  const startAllowed = await Promise.all(
-    baseCandidates.map(async (username) => {
-      const userId = (await context.octokit.rest.users.getByUsername({ username })).data.id;
-      const queryParams: StartStopOperations["getStart"]["parameters"]["query"] = {
-        userId: userId.toString(),
-        issueUrl,
-      };
-
-      const response = await fetch(`${startStopEndpoint}/start?${new URLSearchParams(queryParams).toString()}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${tokenInfo.token}`,
-        },
-      });
-
-      if (!response.ok) {
-        context.logger.warn(`Failed to get start status from endpoint`, { status: response.status, statusText: response.statusText });
-        return null;
-      }
-
-      const payload = (await response.json()) as StartStopOperations["getStart"]["responses"]["200"]["content"]["application/json"];
-
-      if (!payload.ok) {
-        return null;
-      }
-
-      if (!payload.computed || !Array.isArray(payload.computed.assignedIssues)) {
-        throw new Error("Start/stop endpoint returned an invalid payload");
-      }
-
-      return payload.computed.assignedIssues.length === 0 ? username : null;
-    })
-  );
-
-  const allowedCandidates = startAllowed.filter((login): login is string => Boolean(login));
-
-  if (allowedCandidates.length === 0) {
-    return [];
-  }
 
   if (!matchmakingEndpoint) {
-    return allowedCandidates;
+    return baseCandidates;
   }
 
   try {
@@ -103,7 +58,7 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
 
     const ranked = (Array.isArray(candidates) ? candidates : []).map(normalizeCandidate).filter((login): login is string => Boolean(login));
 
-    const allowed = new Set(allowedCandidates);
+    const allowed = new Set(baseCandidates);
     const seen = new Set<string>();
     const ordered = ranked.filter((login) => {
       if (!allowed.has(login) || seen.has(login)) {
@@ -112,11 +67,11 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
       seen.add(login);
       return true;
     });
-    const remaining = allowedCandidates.filter((login) => !seen.has(login));
+    const remaining = baseCandidates.filter((login) => !seen.has(login));
 
     return [...ordered, ...remaining];
   } catch (err) {
     context.logger.error("Failed to query matchmaking endpoint", { err });
-    return allowedCandidates;
+    return baseCandidates;
   }
 }

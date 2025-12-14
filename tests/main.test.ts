@@ -61,7 +61,7 @@ describe("Plugin tests", () => {
           return HttpResponse.json({ ok: false });
         }
 
-        return HttpResponse.json({ ok: true, computed: { assignedIssues: [] } });
+        return HttpResponse.json({ ok: true, computed: { assignedIssues: [{ title: "already working", html_url: "https://github.com/ubiquity/os/issues/3" }] } });
       })
     );
 
