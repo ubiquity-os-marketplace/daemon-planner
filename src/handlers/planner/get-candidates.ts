@@ -29,15 +29,17 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
   const startStopEndpoint = context.env.START_STOP_ENDPOINT;
 
   const issueUrl = `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`;
-  const tokenInfo = (await context.octokit.auth({ type: "installation" })) as { token: string };
+  const tokenInfo = (await context.octokit.auth()) as { token: string };
 
   const startAllowed = await Promise.all(
-    baseCandidates.map(async (userId) => {
+    baseCandidates.map(async (username) => {
+      const userId = (await context.octokit.rest.users.getByUsername({ username })).data.id;
       const queryParams: StartStopOperations["getStart"]["parameters"]["query"] = {
-        userId,
+        userId: userId.toString(),
         issueUrl,
       };
 
+      console.log(tokenInfo);
       const response = await fetch(`${startStopEndpoint}/start?${new URLSearchParams(queryParams).toString()}`, {
         method: "GET",
         headers: {
@@ -47,12 +49,13 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
       });
 
       if (!response.ok) {
+        context.logger.warn(`Failed to get start status from endpoint`, { status: response.status, statusText: response.statusText });
         return null;
       }
 
       const payload = (await response.json()) as StartStopOperations["getStart"]["responses"]["200"]["content"]["application/json"];
 
-      return payload.ok ? userId : null;
+      return payload.ok ? username : null;
     })
   );
 
