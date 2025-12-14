@@ -1,6 +1,7 @@
 {
   "name": "ts-template",
   "description": "ts-template for UbiquityOS plugins.",
+  "workflowId": "action.yml",
   "commands": {
     "hello": {
       "ubiquity:example": "/hello argument",
