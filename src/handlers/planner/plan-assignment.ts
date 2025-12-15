@@ -1,22 +1,9 @@
 import { Context } from "../../types/context";
-import { planIssueAssignment } from "./plan-issue-assignment";
+import { currentAssignees, planIssueAssignment } from "./plan-issue-assignment";
 import { PlannerIssue, RepositoryRef } from "./types";
 
 function issueUrl(repository: RepositoryRef, issue: PlannerIssue): string {
   return `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`;
-}
-
-function currentAssignees(issue: PlannerIssue): string[] {
-  const assignees = issue.assignees ?? [];
-  const result = assignees.map((entry) => entry?.login).filter((login): login is string => Boolean(login));
-
-  const single = issue.assignee?.login;
-
-  if (single) {
-    result.push(single);
-  }
-
-  return Array.from(new Set(result));
 }
 
 export async function planAssignment(context: Context): Promise<void> {

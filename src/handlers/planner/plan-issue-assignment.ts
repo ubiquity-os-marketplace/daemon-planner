@@ -5,7 +5,7 @@ import { getAssignedIssues } from "./get-assigned-issues";
 import { getCandidateLogins, getCandidateLoginsFromPool } from "./get-candidates";
 import { CandidateScore, PlannerContext, PlannerIssue, RepositoryRef } from "./types";
 
-function currentAssignees(issue: PlannerIssue): string[] {
+export function currentAssignees(issue: PlannerIssue): string[] {
   const assignees = issue.assignees ?? [];
   const result = assignees.map((entry) => entry?.login).filter((login): login is string => Boolean(login));
 
