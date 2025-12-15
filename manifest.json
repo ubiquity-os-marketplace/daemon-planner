@@ -38,6 +38,5 @@
       }
     }
   },
-  "homepage_url": "https://daemon-planner-feat-planne.deno.dev",
-  "short_name": "ubiquity-os-marketplace/daemon-planner@feat/planner"
+  "short_name": "ubiquity-os-marketplace/daemon-planner@development"
 }
