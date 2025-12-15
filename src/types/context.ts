@@ -4,7 +4,7 @@ import type { TaskPriorityPool } from "../tasks/task-priority-pool";
 import { Env } from "./env";
 import { PluginSettings } from "./plugin-input";
 
-export type SupportedEvents = "issues.opened" | "issues.reopened";
+export type SupportedEvents = "issues.opened" | "issues.reopened" | "issues.closed";
 
 export type BaseContext<T extends SupportedEvents = SupportedEvents> = PluginContext<PluginSettings, Env, null, T>;
 

@@ -1,16 +1,9 @@
-import { Logs } from "@ubiquity-os/ubiquity-os-logger";
 import { getStartStatus } from "../start-stop/get-start-status";
-import { Context, PluginAdapters } from "../types/index";
+import { Context } from "../types/index";
 
 type UserOrgMap = Map<string, string[]>;
 
-type CollaboratorPoolContext = {
-  adapters: PluginAdapters;
-  octokit: Context["octokit"];
-  logger: Logs;
-  config: Context["config"];
-  env: Context["env"];
-};
+type CollaboratorPoolContext = Omit<Context, "collaborators" | "tasks">;
 
 export class CollaboratorPool {
   private readonly _context: CollaboratorPoolContext;
