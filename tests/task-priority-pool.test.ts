@@ -94,7 +94,7 @@ describe("TaskPriorityPool", () => {
       },
     } as unknown as { octokit: typeof stub.octokit; config: PluginSettings; logger: { error: (msg: string, data?: unknown) => void } };
 
-    const pool = new TaskPriorityPool(context);
+    const pool = new TaskPriorityPool(context as never);
 
     const first = await pool.getSortedAvailableTasks();
     const second = await pool.getSortedAvailableTasks();

@@ -1,9 +1,8 @@
-import type { Logs } from "@ubiquity-os/ubiquity-os-logger";
+import { getUserId } from "../github/get-user-id";
 import type { Context } from "../types";
 import type { operations as StartStopOperations } from "../types/generated/start-stop";
-import { getUserId } from "../github/get-user-id";
 
-type StartStopContext = Pick<Context, "env" | "octokit"> & { logger: Logs };
+type StartStopContext = Pick<Context, "env" | "octokit" | "logger">;
 
 export async function getStartStatus(context: StartStopContext, username: string, issueUrl: string) {
   const userId = await getUserId(context.octokit, username);
