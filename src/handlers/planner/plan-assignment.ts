@@ -25,21 +25,25 @@ function sortByWorkload(collection: CandidateScore[]): CandidateScore[] {
 
 export async function planAssignment(context: PlannerContext, repository: RepositoryRef, issue: PlannerIssue): Promise<void> {
   if (!issue?.number) {
-    context.logger.error("Issue number missing from the payload");
+    context.runSummary?.addAction(context.logger.error("Issue number missing from the payload").logMessage.raw);
     return;
   }
+
+  const issueRef = `${repository.owner}/${repository.name}#${issue.number}`;
 
   const existingAssignees = currentAssignees(issue);
 
   if (existingAssignees.length > 0) {
-    context.logger.debug("Ignoring the issue because it already has users assigned", { existingAssignees, repository });
+    context.runSummary?.addAction(
+      context.logger.debug(`Skipped ${issueRef} (already assigned: ${existingAssignees.join(", ")})`, { existingAssignees, repository }).logMessage.raw
+    );
     return;
   }
 
   const candidates = await getCandidateLogins(context, repository, issue);
 
   if (candidates.length === 0) {
-    context.logger.warn(`No candidates available for ${repository.owner}/${repository.name}#${issue.number}`);
+    context.runSummary?.addAction(context.logger.warn(`No candidates available for ${issueRef}`).logMessage.raw);
     return;
   }
 
@@ -54,13 +58,13 @@ export async function planAssignment(context: PlannerContext, repository: Reposi
   }
 
   if (scores.length === 0) {
-    context.logger.warn(`Could not calculate workloads for ${repository.owner}/${repository.name}#${issue.number}`);
+    context.runSummary?.addAction(context.logger.warn(`Failed to calculate workloads for ${issueRef}`).logMessage.raw);
     return;
   }
 
   const issueHours = estimateIssueHours(issue, context.config);
   if (issueHours === null) {
-    context.logger.warn(`Could not estimate hours for ${repository.owner}/${repository.name}#${issue.number}`);
+    context.runSummary?.addAction(context.logger.warn(`Failed to estimate hours for ${issueRef}`).logMessage.raw);
     return;
   }
   const estimate = issueHours + context.config.reviewBufferHours;
@@ -71,7 +75,14 @@ export async function planAssignment(context: PlannerContext, repository: Reposi
   const chosen = (available.length > 0 ? available : fallback)[0];
 
   if (!chosen) {
-    context.logger.warn(`Could not assign ${repository.owner}/${repository.name}#${issue.number} to any user`);
+    context.runSummary?.addAction(context.logger.warn(`Could not assign ${issueRef} to any user`).logMessage.raw);
+    return;
+  }
+
+  if (context.config.dryRun) {
+    context.runSummary?.addAction(
+      context.logger.info(`Dry run: would assign ${issueRef} to ${chosen.login}`, { repository, issue: issue.number, chosen: chosen.login }).logMessage.raw
+    );
     return;
   }
 
@@ -90,20 +101,26 @@ export async function planAssignment(context: PlannerContext, repository: Reposi
       body: JSON.stringify(body),
     });
     if (!response.ok) {
-      context.logger.warn(`Failed to assign ${repository.owner}/${repository.name}#${issue.number} to ${chosen.login}`, {
-        response: response.status,
-        status: response.statusText,
-        url: `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`,
-      });
+      context.runSummary?.addAction(
+        context.logger.warn(`Failed to assign ${issueRef} to ${chosen.login} (${response.status} ${response.statusText})`, {
+          response: response.status,
+          status: response.statusText,
+          url: `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`,
+        }).logMessage.raw
+      );
     } else {
-      context.logger.ok(`Assigned ${repository.owner}/${repository.name}#${issue.number} to ${chosen.login}`, {
-        response: await response.json(),
-      });
+      context.runSummary?.addAction(
+        context.logger.ok(`Assigned ${issueRef} to ${chosen.login}`, {
+          response: await response.json(),
+        }).logMessage.raw
+      );
     }
   } catch (err) {
-    context.logger.error(`Failed to assign ${repository.owner}/${repository.name}#${issue.number} to ${chosen.login}`, {
-      err: String(err),
-      url: `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`,
-    });
+    context.runSummary?.addAction(
+      context.logger.error(`Failed to assign ${issueRef} to ${chosen.login}`, {
+        err: String(err),
+        url: `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`,
+      }).logMessage.raw
+    );
   }
 }

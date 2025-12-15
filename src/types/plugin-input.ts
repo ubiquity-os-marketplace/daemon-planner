@@ -11,6 +11,10 @@ export const pluginSettingsSchema = T.Object(
     planningHorizonDays: T.Number({ default: 5, minimum: 1 }),
     reviewBufferHours: T.Number({ default: 2, minimum: 0 }),
     assignedTaskLimit: T.Number({ default: 1, minimum: 1 }),
+    dryRun: T.Boolean({
+      default: false,
+      description: "When enabled, planned actions are logged but no assignments are executed.",
+    }),
   },
   { default: {} }
 );
