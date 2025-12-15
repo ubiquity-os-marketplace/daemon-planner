@@ -1,6 +1,7 @@
 {
   "name": "ts-template",
   "description": "ts-template for UbiquityOS plugins.",
+  "workflowId": "dispatch.yml",
   "commands": {
     "hello": {
       "ubiquity:example": "/hello argument",
@@ -19,5 +20,6 @@
         "type": "string"
       }
     }
-  }
+  },
+  "short_name": "ubiquity-os-marketplace/daemon-planner@fix/action-entry"
 }
