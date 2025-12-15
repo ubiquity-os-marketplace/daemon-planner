@@ -24,7 +24,7 @@
     "knip-ci": "knip --no-exit-code --reporter json --config .github/knip.ts",
     "test": "jest --setupFiles dotenv/config --coverage",
     "worker": "wrangler dev --env dev --port 4000",
-    "generate": "dotenv -- bun run-p generate:*",
+    "generate": "dotenv -- bun run generate:text-vector-embeddings && dotenv --  bun run generate:command-start-stop",
     "generate:text-vector-embeddings": "bun x openapi-typescript ${MATCHMAKING_ENDPOINT}/openapi --output src/types/generated/matchmaking.ts",
     "generate:command-start-stop": "bun x openapi-typescript ${START_STOP_ENDPOINT}/openapi --output src/types/generated/start-stop.ts",
     "prepare": "bun run generate && husky"
