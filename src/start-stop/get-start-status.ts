@@ -17,7 +17,9 @@ export async function getStartStatus(context: StartStopContext, username: string
     issueUrl,
   };
 
-  const response = await fetch(`${context.env.START_STOP_ENDPOINT}/start?${new URLSearchParams(queryParams).toString()}`, {
+  const startStopUrl = `${context.env.START_STOP_ENDPOINT}/start?${new URLSearchParams(queryParams).toString()}`;
+
+  const response = await fetch(startStopUrl, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -26,7 +28,7 @@ export async function getStartStatus(context: StartStopContext, username: string
   });
 
   if (!response.ok) {
-    context.logger.warn(`Failed to get start status from endpoint`, { status: response.status, statusText: response.statusText });
+    context.logger.warn(`Failed to get start status from endpoint`, { status: response.status, statusText: response.statusText, startStopUrl });
     return null;
   }
 

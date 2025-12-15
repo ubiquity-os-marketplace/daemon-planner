@@ -34,6 +34,7 @@ export async function planAssignment(context: Context): Promise<void> {
   const remaining = new Set(available);
 
   context.runSummary?.addAction(context.logger.info(`Selected ${selected.length} task(s), ${available.length} collaborator(s) available`).logMessage.raw);
+  console.log(`===> Selected ${selected.length} task(s), ${available.length} collaborator(s) available`);
 
   for (const task of selected) {
     if (remaining.size === 0) {
@@ -45,11 +46,13 @@ export async function planAssignment(context: Context): Promise<void> {
     const issue = task.issue;
 
     if (!issue?.number) {
+      context.logger.warn(`Skipping ${issueUrl(repository, issue)} : missing issue number`);
       continue;
     }
 
     const existing = currentAssignees(issue);
     if (existing.length > 0) {
+      context.logger.warn(`Skipping ${issueUrl(repository, issue)} : already assigned to ${existing.join(", ")}`);
       continue;
     }
 
