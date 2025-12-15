@@ -35,8 +35,13 @@
         "default": 1,
         "minimum": 1,
         "type": "number"
+      },
+      "dryRun": {
+        "default": false,
+        "description": "When enabled, planned actions are logged but no assignments are executed.",
+        "type": "boolean"
       }
     }
   },
-  "short_name": "ubiquity-os-marketplace/daemon-planner@development"
+  "short_name": "ubiquity-os-marketplace/daemon-planner@feat/planner"
 }
