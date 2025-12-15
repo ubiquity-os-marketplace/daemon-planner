@@ -1,4 +1,4 @@
-import type { Context } from "../types";
+import type { Context } from "../types/context";
 
 const cache = new Map<string, Promise<string>>();
 

@@ -1,11 +1,13 @@
-import { LOG_LEVEL, LogLevel } from "@ubiquity-os/ubiquity-os-logger";
 import { createPlugin, Options } from "@ubiquity-os/plugin-sdk";
 import { Manifest } from "@ubiquity-os/plugin-sdk/manifest";
+import { LOG_LEVEL, LogLevel } from "@ubiquity-os/ubiquity-os-logger";
 import { ExecutionContext } from "hono";
 import { env } from "hono/adapter";
 import manifest from "../manifest.json" with { type: "json" };
 import { runPlugin } from "./index";
-import { Env, envSchema, PluginSettings, pluginSettingsSchema, SupportedEvents } from "./types/index";
+import { SupportedEvents } from "./types/context";
+import { Env, envSchema } from "./types/env";
+import { PluginSettings, pluginSettingsSchema } from "./types/plugin-input";
 
 export default {
   async fetch(request: Request, environment: Env, executionCtx?: ExecutionContext) {

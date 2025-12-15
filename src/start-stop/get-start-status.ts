@@ -1,5 +1,5 @@
 import { getUserId } from "../github/get-user-id";
-import type { Context } from "../types";
+import type { Context } from "../types/context";
 import type { operations as StartStopOperations } from "../types/generated/start-stop";
 
 type StartStopContext = Pick<Context, "env" | "octokit" | "logger">;

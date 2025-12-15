@@ -1,4 +1,4 @@
-import { Context } from "../../types/index";
+import { Context } from "../../types/context";
 
 export type PlannerContext = Pick<Context, "config" | "octokit" | "logger" | "env" | "collaborators">;
 

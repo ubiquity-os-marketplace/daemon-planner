@@ -1,6 +1,6 @@
 import { estimateIssueHours } from "../handlers/planner/estimate-issue-hours";
 import { PlannerIssue, PlannerLabel, RepositoryRef } from "../handlers/planner/types";
-import { Context } from "../types";
+import { Context } from "../types/context";
 
 export interface TaskRef {
   repository: RepositoryRef;

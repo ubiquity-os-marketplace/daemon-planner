@@ -1,4 +1,4 @@
-import { BaseContext, PluginAdapters } from "../types/index";
+import { BaseContext, PluginAdapters } from "../types/context";
 import { fetchOrganizationCollaborators } from "./collaborators";
 
 export function createAdapters(context: BaseContext): PluginAdapters {

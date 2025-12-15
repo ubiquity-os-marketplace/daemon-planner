@@ -1,4 +1,4 @@
-import { BaseContext } from "../types/index";
+import { BaseContext } from "../types/context";
 
 function normalizeCollaborator(entry: unknown): string | null {
   if (typeof entry === "string") {

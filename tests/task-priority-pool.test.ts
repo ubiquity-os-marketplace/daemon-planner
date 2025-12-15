@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 import { TaskPriorityPool } from "../src/tasks/task-priority-pool";
-import type { PluginSettings } from "../src/types";
+import type { PluginSettings } from "../src/types/plugin-input";
 
 function createOctokitStub() {
   const calls: string[] = [];

@@ -6,7 +6,9 @@ import dotenv from "dotenv";
 import { http, HttpResponse } from "msw";
 import manifest from "../manifest.json";
 import { runPlugin } from "../src";
-import { BaseContext, Env, PluginSettings } from "../src/types";
+import type { BaseContext } from "../src/types/context";
+import type { Env } from "../src/types/env";
+import type { PluginSettings } from "../src/types/plugin-input";
 import { db } from "./__mocks__/db";
 import { setupTests } from "./__mocks__/helpers";
 import { server } from "./__mocks__/node";
@@ -61,7 +63,10 @@ describe("Plugin tests", () => {
           return HttpResponse.json({ ok: false });
         }
 
-        return HttpResponse.json({ ok: true, computed: { assignedIssues: [{ title: "already working", html_url: "https://github.com/ubiquity/os/issues/3" }] } });
+        return HttpResponse.json({
+          ok: true,
+          computed: { assignedIssues: [{ title: "already working", html_url: "https://github.com/ubiquity/os/issues/3" }] },
+        });
       })
     );
 

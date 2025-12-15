@@ -1,8 +1,8 @@
-import { createAdapters } from "./adapters/index";
+import { createAdapters } from "./adapters/create-adapters";
 import { CollaboratorPool } from "./collaborators/collaborator-pool";
 import { planIssue } from "./handlers/plan-issue";
 import { TaskPriorityPool } from "./tasks/task-priority-pool";
-import { BaseContext, Context } from "./types/index";
+import { BaseContext, Context } from "./types/context";
 import { isIssueClosedEvent, isIssueOpenedEvent, isIssueReopenedEvent } from "./types/typeguards";
 
 export async function runPlugin(baseContext: BaseContext) {

@@ -1,5 +1,5 @@
 import ms from "ms";
-import { PluginSettings } from "../../types/index";
+import { PluginSettings } from "../../types/plugin-input";
 import { PlannerIssue, PlannerLabel } from "./types";
 
 function labelName(label: PlannerLabel | string): string {

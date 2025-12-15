@@ -1,5 +1,5 @@
 import { getStartStatus } from "../start-stop/get-start-status";
-import { Context } from "../types/index";
+import { Context } from "../types/context";
 
 type UserOrgMap = Map<string, string[]>;
 
