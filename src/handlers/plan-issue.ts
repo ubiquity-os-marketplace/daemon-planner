@@ -1,5 +1,5 @@
 import { Context } from "../types/context";
-import { planAssignment } from "./planner/plan-assignment";
+import { planIssueAssignment } from "./planner/plan-issue-assignment";
 
 export async function planIssue(context: Context<"issues.opened" | "issues.reopened" | "issues.closed">) {
   const repository = {
@@ -7,5 +7,5 @@ export async function planIssue(context: Context<"issues.opened" | "issues.reope
     name: context.payload.repository.name,
   };
 
-  await planAssignment(context, repository, context.payload.issue);
+  await planIssueAssignment(context, repository, context.payload.issue);
 }

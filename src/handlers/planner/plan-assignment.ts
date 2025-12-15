@@ -1,10 +1,10 @@
-import { operations } from "../../types/generated/start-stop";
-import { getUserId } from "../../github/get-user-id";
-import { calculateWorkload } from "./calculate-workload";
-import { estimateIssueHours } from "./estimate-issue-hours";
-import { getAssignedIssues } from "./get-assigned-issues";
-import { getCandidateLogins } from "./get-candidates";
-import { CandidateScore, PlannerContext, PlannerIssue, RepositoryRef } from "./types";
+import { Context } from "../../types/context";
+import { planIssueAssignment } from "./plan-issue-assignment";
+import { PlannerIssue, RepositoryRef } from "./types";
+
+function issueUrl(repository: RepositoryRef, issue: PlannerIssue): string {
+  return `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`;
+}
 
 function currentAssignees(issue: PlannerIssue): string[] {
   const assignees = issue.assignees ?? [];
@@ -19,108 +19,43 @@ function currentAssignees(issue: PlannerIssue): string[] {
   return Array.from(new Set(result));
 }
 
-function sortByWorkload(collection: CandidateScore[]): CandidateScore[] {
-  return [...collection].sort((a, b) => a.load - b.load);
-}
+export async function planAssignment(context: Context): Promise<void> {
+  const tasks = await context.tasks.getSortedAvailableTasks();
+  const limit = context.config.assignedTaskLimit;
+  const selected = tasks.slice(0, limit);
 
-export async function planAssignment(context: PlannerContext, repository: RepositoryRef, issue: PlannerIssue): Promise<void> {
-  if (!issue?.number) {
-    context.runSummary?.addAction(context.logger.error("Issue number missing from the payload").logMessage.raw);
+  if (selected.length === 0) {
+    context.runSummary?.addAction(context.logger.info("No eligible tasks found").logMessage.raw);
     return;
   }
 
-  const issueRef = `${repository.owner}/${repository.name}#${issue.number}`;
+  const seedUrl = issueUrl(selected[0].repository, selected[0].issue);
+  const available = await context.collaborators.getAllAvailableLogins(seedUrl);
+  const remaining = new Set(available);
 
-  const existingAssignees = currentAssignees(issue);
+  context.runSummary?.addAction(context.logger.info(`Selected ${selected.length} task(s), ${available.length} collaborator(s) available`).logMessage.raw);
 
-  if (existingAssignees.length > 0) {
-    context.runSummary?.addAction(
-      context.logger.debug(`Skipped ${issueRef} (already assigned: ${existingAssignees.join(", ")})`, { existingAssignees, repository }).logMessage.raw
-    );
-    return;
-  }
-
-  const candidates = await getCandidateLogins(context, repository, issue);
-
-  if (candidates.length === 0) {
-    context.runSummary?.addAction(context.logger.warn(`No candidates available for ${issueRef}`).logMessage.raw);
-    return;
-  }
-
-  const scores: CandidateScore[] = [];
-
-  const issueUrl = `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`;
-
-  for (const login of candidates) {
-    const issues = await getAssignedIssues(context, login, issueUrl);
-    const load = calculateWorkload(issues, context.config);
-    scores.push({ login, load });
-  }
-
-  if (scores.length === 0) {
-    context.runSummary?.addAction(context.logger.warn(`Failed to calculate workloads for ${issueRef}`).logMessage.raw);
-    return;
-  }
-
-  const issueHours = estimateIssueHours(issue, context.config);
-  if (issueHours === null) {
-    context.runSummary?.addAction(context.logger.warn(`Failed to estimate hours for ${issueRef}`).logMessage.raw);
-    return;
-  }
-  const estimate = issueHours + context.config.reviewBufferHours;
-  const capacity = context.config.dailyCapacityHours * context.config.planningHorizonDays;
-
-  const available = sortByWorkload(scores.filter((entry) => entry.load + estimate <= capacity));
-  const fallback = sortByWorkload(scores);
-  const chosen = (available.length > 0 ? available : fallback)[0];
-
-  if (!chosen) {
-    context.runSummary?.addAction(context.logger.warn(`Could not assign ${issueRef} to any user`).logMessage.raw);
-    return;
-  }
-
-  if (context.config.dryRun) {
-    context.runSummary?.addAction(
-      context.logger.info(`Dry run: would assign ${issueRef} to ${chosen.login}`, { repository, issue: issue.number, chosen: chosen.login }).logMessage.raw
-    );
-    return;
-  }
-
-  const body: NonNullable<operations["postStart"]["requestBody"]>["content"]["application/json"] = {
-    issueUrl,
-    userId: await getUserId(context.octokit, chosen.login),
-  };
-  try {
-    const tokenInfo = (await context.octokit.auth({ type: "installation" })) as { token: string };
-    const response = await fetch(`${context.env.START_STOP_ENDPOINT}/start`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${tokenInfo.token}`,
-      },
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      context.runSummary?.addAction(
-        context.logger.warn(`Failed to assign ${issueRef} to ${chosen.login} (${response.status} ${response.statusText})`, {
-          response: response.status,
-          status: response.statusText,
-          url: `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`,
-        }).logMessage.raw
-      );
-    } else {
-      context.runSummary?.addAction(
-        context.logger.ok(`Assigned ${issueRef} to ${chosen.login}`, {
-          response: await response.json(),
-        }).logMessage.raw
-      );
+  for (const task of selected) {
+    if (remaining.size === 0) {
+      context.runSummary?.addAction(context.logger.info("Stopping early (no collaborators left to assign)").logMessage.raw);
+      return;
     }
-  } catch (err) {
-    context.runSummary?.addAction(
-      context.logger.error(`Failed to assign ${issueRef} to ${chosen.login}`, {
-        err: String(err),
-        url: `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`,
-      }).logMessage.raw
-    );
+
+    const repository = task.repository;
+    const issue = task.issue;
+
+    if (!issue?.number) {
+      continue;
+    }
+
+    const existing = currentAssignees(issue);
+    if (existing.length > 0) {
+      continue;
+    }
+
+    const assigned = await planIssueAssignment(context, repository, issue, remaining);
+    if (assigned) {
+      remaining.delete(assigned);
+    }
   }
 }

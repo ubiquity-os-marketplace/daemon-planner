@@ -75,3 +75,13 @@ export async function getCandidateLogins(context: PlannerContext, repository: Re
     return baseCandidates;
   }
 }
+
+export async function getCandidateLoginsFromPool(
+  context: PlannerContext,
+  repository: RepositoryRef,
+  issue: PlannerIssue,
+  allowedLogins: ReadonlySet<string>
+): Promise<string[]> {
+  const candidates = await getCandidateLogins(context, repository, issue);
+  return candidates.filter((login) => allowedLogins.has(login));
+}

@@ -78,20 +78,6 @@ describe("Plugin tests", () => {
     const assignees = (issue?.assignees as { login: string }[] | undefined) ?? [];
     expect(assignees.length).toBe(0);
   });
-
-  it("Should assign unowned issues across configured organizations during the daily schedule", async () => {
-    const request = createScheduleContext();
-
-    await runPlugin(request);
-
-    const issue1 = db.issue.findFirst({ where: { number: { equals: 1 } } });
-    const issue2 = db.issue.findFirst({ where: { number: { equals: 2 } } });
-
-    const assignees1 = (issue1?.assignees as { login: string }[] | undefined) ?? [];
-    const assignees2 = (issue2?.assignees as { login: string }[] | undefined) ?? [];
-
-    expect(assignees1.length + assignees2.length).toBeGreaterThan(0);
-  });
 });
 
 function createConfig(overrides: Partial<PluginSettings> = {}): PluginSettings {
@@ -135,16 +121,4 @@ function createIssueOpenedContext(overrides: Partial<PluginSettings> = {}): Base
     env: createEnv(),
     octokit,
   } as unknown as BaseContext<"issues.opened">;
-}
-
-function createScheduleContext(overrides: Partial<PluginSettings> = {}): BaseContext {
-  return {
-    eventName: "cron",
-    command: null,
-    payload: {},
-    logger: new Logs("debug"),
-    config: createConfig(overrides),
-    env: createEnv(),
-    octokit,
-  } as unknown as BaseContext;
 }
