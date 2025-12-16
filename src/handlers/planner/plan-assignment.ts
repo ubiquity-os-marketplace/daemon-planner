@@ -19,7 +19,6 @@ export async function planAssignment(context: Context): Promise<void> {
   const remaining = new Set(available);
 
   context.runSummary?.addAction(context.logger.info(`Selected ${tasks.length} task(s), ${available.length} candidate(s) available`).logMessage.raw);
-  console.log(`===> Selected ${tasks.length} task(s), ${available.length} candidate(s) available`);
 
   for (const task of tasks) {
     if (remaining.size === 0) {

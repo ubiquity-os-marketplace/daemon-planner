@@ -1,6 +1,6 @@
 import { createAdapters } from "./adapters/create-adapters";
 import { CandidatePool } from "./candidates/candidate-pool";
-import { planIssue } from "./handlers/plan-issue";
+import { planAssignment } from "./handlers/planner/plan-assignment";
 import { TaskPriorityPool } from "./tasks/task-priority-pool";
 import { BaseContext, Context } from "./types/context";
 import { isIssueClosedEvent, isIssueOpenedEvent, isIssueReopenedEvent } from "./types/typeguards";
@@ -15,7 +15,7 @@ export async function runPlugin(baseContext: BaseContext) {
   }) as Context;
 
   if (isIssueOpenedEvent(context) || isIssueReopenedEvent(context) || isIssueClosedEvent(context)) {
-    await planIssue(context);
+    await planAssignment(context);
     return;
   }
   context.logger.info("Event not supported", { event: context.eventName });

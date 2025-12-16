@@ -19,6 +19,10 @@ export async function getStartStatus(context: StartStopContext, username: string
 
   const startStopUrl = `${context.env.START_STOP_ENDPOINT}/start?${new URLSearchParams(queryParams).toString()}`;
 
+  context.logger.debug("Querying the start/stop URL", {
+    startStopUrl,
+  });
+
   const response = await fetch(startStopUrl, {
     method: "GET",
     headers: {
@@ -34,9 +38,10 @@ export async function getStartStatus(context: StartStopContext, username: string
 
   const payload = (await response.json()) as StartStopOperations["getStart"]["responses"]["200"]["content"]["application/json"];
 
-  if (!payload.ok) {
-    return null;
-  }
+  context.logger.debug("Start/stop response", {
+    startStopUrl,
+    payload,
+  });
 
   if (!payload.computed || !Array.isArray(payload.computed.assignedIssues)) {
     throw new Error("Start/stop endpoint returned an invalid payload");
