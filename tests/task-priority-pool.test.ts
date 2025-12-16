@@ -8,6 +8,9 @@ function createOctokitStub() {
   const accessibleRepos: Array<{ name: string; archived: boolean; private: boolean; owner?: { login?: string } }> = [];
   const issuesByRepo = new Map<string, Array<{ number: number; labels?: Array<{ name?: string | null } | string | null> }>>();
 
+  const installationIdByOrg = new Map<string, number>();
+  const orgByInstallationId = new Map<number, string>();
+
   function emptyListResponse(kind: "installation" | "repo", params: unknown) {
     if (kind === "installation" && params === null) {
       return { data: [] };
@@ -17,23 +20,36 @@ function createOctokitStub() {
 
   const listReposAccessibleToInstallation = async (params: unknown) => emptyListResponse("installation", params);
   const listForRepo = async (params: unknown) => emptyListResponse("repo", params);
+  const getOrgInstallation = async ({ org }: { org: string }) => {
+    if (!installationIdByOrg.has(org)) {
+      const nextId = installationIdByOrg.size + 1;
+      installationIdByOrg.set(org, nextId);
+      orgByInstallationId.set(nextId, org);
+    }
+    return { data: { id: installationIdByOrg.get(org) } };
+  };
 
   const octokit = {
     rest: {
       apps: {
         listReposAccessibleToInstallation,
+        getOrgInstallation,
       },
       issues: {
         listForRepo,
       },
     },
+    auth: async ({ installationId }: { installationId: number }) => ({ token: `token-${installationId}` }),
     paginate: async (method: unknown, params: { org?: string; owner?: string; repo?: string }, mapFn?: (response: { data: unknown[] }) => unknown[]) => {
       if (method === listReposAccessibleToInstallation) {
         calls.push("apps.listReposAccessibleToInstallation");
         if (mapFn) {
           throw new Error("Unexpected mapFn for listReposAccessibleToInstallation");
         }
-        return accessibleRepos;
+        const auth = (params as unknown as { headers?: { authorization?: string } }).headers?.authorization ?? "";
+        const match = /^token\s+token-(\d+)$/.exec(auth);
+        const org = match ? orgByInstallationId.get(Number(match[1])) : null;
+        return org ? accessibleRepos.filter((repo) => repo.owner?.login === org) : [];
       }
 
       if (method === listForRepo) {
@@ -111,7 +127,7 @@ describe("TaskPriorityPool", () => {
     const repoCalls = stub.calls.filter((call) => call === "apps.listReposAccessibleToInstallation");
     const issueCalls = stub.calls.filter((call) => call.startsWith("issues.listForRepo:"));
 
-    expect(repoCalls).toHaveLength(1);
+    expect(repoCalls).toHaveLength(2);
     expect(issueCalls).toHaveLength(3);
   });
 });

@@ -1,3 +1,4 @@
+import { getInstallationTokenForOrg } from "../github/get-installation-token-for-org";
 import { estimateIssueHours } from "../handlers/planner/estimate-issue-hours";
 import { PlannerIssue, PlannerLabel, RepositoryRef } from "../handlers/planner/types";
 import { Context } from "../types/context";
@@ -32,9 +33,26 @@ function parsePriorityFromLabel(label: string): number | null {
 export class TaskPriorityPool {
   private readonly _context: Pick<Context, "octokit" | "config" | "logger">;
   private _cachedTasks: Promise<TaskRef[]> | null = null;
+  private readonly _orgTokenCache = new Map<string, Promise<string | null>>();
 
   constructor(context: Pick<Context, "octokit" | "config" | "logger">) {
     this._context = context;
+  }
+
+  private _getOrgToken(org: string): Promise<string | null> {
+    const key = org.trim();
+    if (!key) {
+      return Promise.resolve(null);
+    }
+
+    const cached = this._orgTokenCache.get(key);
+    if (cached) {
+      return cached;
+    }
+
+    const pending = getInstallationTokenForOrg(this._context as never, key);
+    this._orgTokenCache.set(key, pending);
+    return pending;
   }
 
   private static _getIssuePriorityOrNull(issue: PlannerIssue): number | null {
@@ -99,11 +117,14 @@ export class TaskPriorityPool {
     return hasPriority && hasTime;
   }
 
-  private async _listAccessibleRepositories(): Promise<
-    Array<{ name: string; archived?: boolean; private?: boolean; owner?: { login?: string | null } | null }>
-  > {
+  private async _listAccessibleRepositories(
+    token?: string | null
+  ): Promise<Array<{ name: string; archived?: boolean; private?: boolean; owner?: { login?: string | null } | null }>> {
     try {
-      return await this._context.octokit.paginate(this._context.octokit.rest.apps.listReposAccessibleToInstallation, { per_page: 100 });
+      return await this._context.octokit.paginate(this._context.octokit.rest.apps.listReposAccessibleToInstallation, {
+        per_page: 100,
+        ...(token ? { headers: { authorization: `token ${token}` } } : {}),
+      });
     } catch (error) {
       const cause = error instanceof Error ? error : new Error(String(error));
       this._context.logger.error("Failed to list repositories accessible to installation", { error: cause });
@@ -111,7 +132,7 @@ export class TaskPriorityPool {
     }
   }
 
-  private async _listUnassignedIssues(owner: string, repo: string): Promise<PlannerIssue[]> {
+  private async _listUnassignedIssues(owner: string, repo: string, token?: string | null): Promise<PlannerIssue[]> {
     try {
       return await this._context.octokit.paginate(this._context.octokit.rest.issues.listForRepo, {
         owner,
@@ -119,6 +140,7 @@ export class TaskPriorityPool {
         state: "open",
         assignee: "none",
         per_page: 100,
+        ...(token ? { headers: { authorization: `token ${token}` } } : {}),
       });
     } catch (error) {
       const cause = error instanceof Error ? error : new Error(String(error));
@@ -130,40 +152,39 @@ export class TaskPriorityPool {
   private async _fetchAvailableTasks(): Promise<TaskRef[]> {
     const tasks: TaskRef[] = [];
 
-    const allowedOwners = new Set(this._context.config.organizations.map((org) => org.trim()).filter((org) => Boolean(org)));
-    const repositories = await this._listAccessibleRepositories();
-    const eligibleRepos = repositories.filter((repository) => {
-      const owner = repository.owner?.login?.trim();
-      if (!owner || !allowedOwners.has(owner)) {
-        return false;
-      }
+    const organizations = Array.from(new Set(this._context.config.organizations.map((org) => org.trim()).filter((org) => Boolean(org))));
 
-      if (repository.archived || repository.private) {
-        return false;
-      }
+    for (const org of organizations) {
+      const token = await this._getOrgToken(org);
+      const repositories = await this._listAccessibleRepositories(token);
+      const eligibleRepos = repositories.filter((repository) => {
+        const owner = repository.owner?.login?.trim();
+        if (!owner || owner.toLowerCase() !== org.toLowerCase()) {
+          return false;
+        }
 
-      return true;
-    });
+        return !(repository.archived || repository.private);
+      });
 
-    for (const repository of eligibleRepos) {
-      const owner = repository.owner?.login;
-
-      if (!owner) {
-        continue;
-      }
-
-      const repo = repository.name;
-      const issues = await this._listUnassignedIssues(owner, repo);
-
-      for (const issue of issues) {
-        if (!this._isEligibleIssue(issue)) {
+      for (const repository of eligibleRepos) {
+        const owner = repository.owner?.login;
+        if (!owner) {
           continue;
         }
 
-        tasks.push({
-          repository: { owner, name: repo },
-          issue,
-        });
+        const repo = repository.name;
+        const issues = await this._listUnassignedIssues(owner, repo, token);
+
+        for (const issue of issues) {
+          if (!this._isEligibleIssue(issue)) {
+            continue;
+          }
+
+          tasks.push({
+            repository: { owner, name: repo },
+            issue,
+          });
+        }
       }
     }
 

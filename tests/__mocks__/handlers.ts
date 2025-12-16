@@ -5,6 +5,10 @@ import issueTemplate from "./issue-template";
  * Intercepts the routes and returns a custom payload
  */
 export const handlers = [
+  http.get("https://api.github.com/orgs/:org/installation", ({ params: { org } }: { params: { org: string } }) => {
+    const id = Array.from(org).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+    return HttpResponse.json({ id });
+  }),
   http.get("https://api.github.com/orgs/:org/members", () => HttpResponse.json(db.users.getAll())),
   http.get("https://api.github.com/installation/repositories", () =>
     HttpResponse.json({ total_count: db.repo.getAll().length, repositories: db.repo.getAll() })

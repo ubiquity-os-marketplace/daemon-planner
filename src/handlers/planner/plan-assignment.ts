@@ -53,7 +53,14 @@ export async function planAssignment(context: Context): Promise<void> {
       continue;
     }
 
-    const assigned = await planIssueAssignment(context, repository, issue, remaining);
+    const orgCandidates = await context.candidates.getAvailableCandidates(repository.owner, seedUrl);
+    const allowed = orgCandidates.filter((login) => remaining.has(login));
+    if (allowed.length === 0) {
+      context.runSummary?.addAction(context.logger.warn(`No candidates available for ${repository.owner} tasks`).logMessage.raw);
+      continue;
+    }
+
+    const assigned = await planIssueAssignment(context, repository, issue, new Set(allowed));
     if (assigned) {
       remaining.delete(assigned);
     }

@@ -7,7 +7,8 @@ function formatMatchPercent(similarity?: number | null): string {
     return "";
   }
 
-  return ` (${Math.round(similarity * 100)}%)`;
+  const normalized = Math.min(1, Math.max(0, similarity > 1 ? similarity / 100 : similarity));
+  return ` (${Math.round(normalized * 100)}%)`;
 }
 
 export async function assignIssueToUser(

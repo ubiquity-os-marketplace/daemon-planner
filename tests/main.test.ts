@@ -5,13 +5,14 @@ import { Logs } from "@ubiquity-os/ubiquity-os-logger";
 import dotenv from "dotenv";
 import { http, HttpResponse } from "msw";
 import manifest from "../manifest.json";
-import { createRunSummary } from "../src/github/create-run-summary";
 import { runPlugin } from "../src";
+import { createRunSummary } from "../src/github/create-run-summary";
 import type { BaseContext } from "../src/types/context";
 import type { Env } from "../src/types/env";
 import type { PluginSettings } from "../src/types/plugin-input";
 import { db } from "./__mocks__/db";
 import { setupTests } from "./__mocks__/helpers";
+import issueTemplate from "./__mocks__/issue-template";
 import { server } from "./__mocks__/node";
 import { STRINGS } from "./__mocks__/strings";
 
@@ -124,6 +125,92 @@ describe("Plugin tests", () => {
 
     const actions = (context as unknown as { runSummary: ReturnType<typeof createRunSummary> }).runSummary.actions.join("\n");
     expect(actions).toContain("(30%)");
+  });
+
+  it("Should not assign users across organizations", async () => {
+    server.use(
+      http.get("https://api.github.com/orgs/:org/members", ({ params: { org } }: { params: { org: string } }) => {
+        if (org === "ubiquity") {
+          return HttpResponse.json([{ login: "user1" }]);
+        }
+        if (org === "ubiquity-os") {
+          return HttpResponse.json([{ login: "user2" }]);
+        }
+        return HttpResponse.json([]);
+      })
+    );
+
+    const preseeded = db.issue.findFirst({ where: { id: { equals: 3 } } });
+    if (preseeded) {
+      db.issue.update({
+        where: { id: { equals: preseeded.id as number } },
+        data: {
+          ...preseeded,
+          assignees: [],
+          assignee: null,
+        },
+      });
+    }
+
+    db.issue.create({
+      ...issueTemplate,
+      id: 100,
+      owner: "ubiquity-os",
+      repo: STRINGS.TEST_REPO,
+      html_url: "https://github.com/ubiquity-os/test-repo/issues/10",
+      repository_url: "https://github.com/ubiquity-os/test-repo",
+      number: 10,
+      title: "org-b task",
+      assignees: [],
+      assignee: null,
+      labels: [{ name: "Time: <1 Hour" }, { name: "Priority: 1 (Normal)" }],
+      updated_at: new Date().toISOString(),
+    });
+
+    const context = createIssueOpenedContext();
+
+    await runPlugin(context);
+
+    const ubiquityIssue = db.issue.findFirst({ where: { owner: { equals: "ubiquity" }, number: { equals: 1 } } });
+    expect(((ubiquityIssue?.assignees as { login: string }[] | undefined) ?? [])[0]?.login).toBe("user1");
+
+    const ubiquityOsIssue = db.issue.findFirst({ where: { owner: { equals: "ubiquity-os" }, number: { equals: 10 } } });
+    expect(((ubiquityOsIssue?.assignees as { login: string }[] | undefined) ?? [])[0]?.login).toBe("user2");
+  });
+
+  it("Should normalize matchmaking similarity returned as 0..100", async () => {
+    server.use(
+      http.get("https://command-start-stop-main.deno.dev/start", () => {
+        return HttpResponse.json({
+          ok: true,
+          computed: { assignedIssues: [] },
+        });
+      }),
+      http.get("https://text-vector-embeddings-mai.deno.dev/recommendations", ({ request }) => {
+        const url = new URL(request.url);
+        const issueUrl = url.searchParams.get("issueUrls") ?? "https://github.com/ubiquity/test-repo/issues/1";
+
+        return HttpResponse.json({
+          [issueUrl]: {
+            matchResultArray: {},
+            similarIssues: [],
+            sortedContributors: [
+              { login: "user1", matches: [], maxSimilarity: 77 },
+              { login: "user2", matches: [], maxSimilarity: 77 },
+            ],
+          },
+        });
+      })
+    );
+
+    const context = createIssueOpenedContext({ dryRun: true });
+    (context as unknown as { runSummary: ReturnType<typeof createRunSummary> }).runSummary = createRunSummary(true);
+
+    await runPlugin(context);
+
+    const actions = (context as unknown as { runSummary: ReturnType<typeof createRunSummary> }).runSummary.actions.join("\n");
+    expect(actions).toContain("(77%)");
+    expect(actions).not.toContain("(7700%)");
   });
 });
 
