@@ -9,6 +9,14 @@ function issueUrl(repository: RepositoryRef, issue: PlannerIssue): string {
 export async function planAssignment(context: Context): Promise<void> {
   const tasks = await context.tasks.getSortedAvailableTasks();
 
+  context.runSummary?.setConsideredTasks(
+    tasks.map((task) => ({
+      owner: task.repository.owner,
+      repo: task.repository.name,
+      issueNumber: task.issue.number,
+    }))
+  );
+
   if (tasks.length === 0) {
     context.runSummary?.addAction(context.logger.info("No eligible tasks found").logMessage.raw);
     return;
@@ -17,6 +25,8 @@ export async function planAssignment(context: Context): Promise<void> {
   const seedUrl = issueUrl(tasks[0].repository, tasks[0].issue);
   const available = await context.candidates.getAllAvailableLogins(seedUrl);
   const remaining = new Set(available);
+
+  context.runSummary?.setAvailableCandidates(available);
 
   context.runSummary?.addAction(context.logger.info(`Selected ${tasks.length} task(s), ${available.length} candidate(s) available`).logMessage.raw);
 
@@ -43,6 +53,11 @@ export async function planAssignment(context: Context): Promise<void> {
     const assigned = await planIssueAssignment(context, repository, issue, remaining);
     if (assigned) {
       remaining.delete(assigned);
+      context.runSummary?.addAssignedTask(assigned, {
+        owner: repository.owner,
+        repo: repository.name,
+        issueNumber: issue.number,
+      });
     }
   }
 }
