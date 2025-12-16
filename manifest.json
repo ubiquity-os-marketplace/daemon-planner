@@ -36,6 +36,13 @@
         "minimum": 1,
         "type": "number"
       },
+      "recommendationThreshold": {
+        "default": 0.2,
+        "minimum": 0,
+        "maximum": 1,
+        "description": "Minimum matchmaking relevance score required for a user to be considered for assignment.",
+        "type": "number"
+      },
       "dryRun": {
         "default": false,
         "description": "When enabled, planned actions are logged but no assignments are executed.",
