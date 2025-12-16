@@ -30,14 +30,14 @@ jobs:
     env:
       PLUGIN_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       KERNEL_PUBLIC_KEY: ${{ secrets.KERNEL_PUBLIC_KEY }}
-      MATCHMAKING_ENDPOINT: ${{ secrets.MATCHMAKING_ENDPOINT }}
-      START_STOP_ENDPOINT: ${{ secrets.START_STOP_ENDPOINT }}
+      MATCHMAKING_ENDPOINT: ${{ vars.MATCHMAKING_ENDPOINT }}
+      START_STOP_ENDPOINT: ${{ vars.START_STOP_ENDPOINT }}
       APP_ID: ${{ secrets.APP_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
       LOG_LEVEL: ${{ secrets.LOG_LEVEL || 'info' }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: execute directive
         run: node ./dist/index.js
