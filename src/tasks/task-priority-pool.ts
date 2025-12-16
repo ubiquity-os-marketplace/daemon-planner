@@ -1,4 +1,5 @@
-import { getInstallationTokenForOrg } from "../github/get-installation-token-for-org";
+import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
+import { getOrgAuthenticatedOctokit } from "../github/get-org-authenticated-octokit";
 import { estimateIssueHours } from "../handlers/planner/estimate-issue-hours";
 import { PlannerIssue, PlannerLabel, RepositoryRef } from "../handlers/planner/types";
 import { Context } from "../types/context";
@@ -33,13 +34,13 @@ function parsePriorityFromLabel(label: string): number | null {
 export class TaskPriorityPool {
   private readonly _context: Pick<Context, "octokit" | "config" | "logger">;
   private _cachedTasks: Promise<TaskRef[]> | null = null;
-  private readonly _orgTokenCache = new Map<string, Promise<string | null>>();
+  private readonly _orgTokenCache = new Map<string, Promise<InstanceType<typeof customOctokit> | null>>();
 
   constructor(context: Pick<Context, "octokit" | "config" | "logger">) {
     this._context = context;
   }
 
-  private _getOrgToken(org: string): Promise<string | null> {
+  private _getOrgOctokit(org: string): Promise<InstanceType<typeof customOctokit> | null> {
     const key = org.trim();
     if (!key) {
       return Promise.resolve(null);
@@ -50,7 +51,7 @@ export class TaskPriorityPool {
       return cached;
     }
 
-    const pending = getInstallationTokenForOrg(this._context as never, key);
+    const pending = getOrgAuthenticatedOctokit(this._context as never, key);
     this._orgTokenCache.set(key, pending);
     return pending;
   }
@@ -118,12 +119,11 @@ export class TaskPriorityPool {
   }
 
   private async _listAccessibleRepositories(
-    token?: string | null
+    octokit?: InstanceType<typeof customOctokit> | null
   ): Promise<Array<{ name: string; archived?: boolean; private?: boolean; owner?: { login?: string | null } | null }>> {
     try {
-      return await this._context.octokit.paginate(this._context.octokit.rest.apps.listReposAccessibleToInstallation, {
+      return await (octokit ?? this._context.octokit).paginate(this._context.octokit.rest.apps.listReposAccessibleToInstallation, {
         per_page: 100,
-        ...(token ? { headers: { authorization: `token ${token}` } } : {}),
       });
     } catch (error) {
       const cause = error instanceof Error ? error : new Error(String(error));
@@ -132,15 +132,14 @@ export class TaskPriorityPool {
     }
   }
 
-  private async _listUnassignedIssues(owner: string, repo: string, token?: string | null): Promise<PlannerIssue[]> {
+  private async _listUnassignedIssues(owner: string, repo: string, octokit?: InstanceType<typeof customOctokit> | null): Promise<PlannerIssue[]> {
     try {
-      return await this._context.octokit.paginate(this._context.octokit.rest.issues.listForRepo, {
+      return await (octokit ?? this._context.octokit).paginate(this._context.octokit.rest.issues.listForRepo, {
         owner,
         repo,
         state: "open",
         assignee: "none",
         per_page: 100,
-        ...(token ? { headers: { authorization: `token ${token}` } } : {}),
       });
     } catch (error) {
       const cause = error instanceof Error ? error : new Error(String(error));
@@ -155,8 +154,8 @@ export class TaskPriorityPool {
     const organizations = Array.from(new Set(this._context.config.organizations.map((org) => org.trim()).filter((org) => Boolean(org))));
 
     for (const org of organizations) {
-      const token = await this._getOrgToken(org);
-      const repositories = await this._listAccessibleRepositories(token);
+      const octokit = await this._getOrgOctokit(org);
+      const repositories = await this._listAccessibleRepositories(octokit);
       const eligibleRepos = repositories.filter((repository) => {
         const owner = repository.owner?.login?.trim();
         if (!owner || owner.toLowerCase() !== org.toLowerCase()) {
@@ -173,7 +172,7 @@ export class TaskPriorityPool {
         }
 
         const repo = repository.name;
-        const issues = await this._listUnassignedIssues(owner, repo, token);
+        const issues = await this._listUnassignedIssues(owner, repo, octokit);
 
         for (const issue of issues) {
           if (!this._isEligibleIssue(issue)) {

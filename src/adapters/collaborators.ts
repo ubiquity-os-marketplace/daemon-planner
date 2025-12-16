@@ -1,4 +1,4 @@
-import { getInstallationTokenForOrg } from "../github/get-installation-token-for-org";
+import { getOrgAuthenticatedOctokit } from "../github/get-org-authenticated-octokit";
 import { BaseContext } from "../types/context";
 
 function normalizeCollaborator(entry: unknown): string | null {
@@ -19,11 +19,10 @@ function normalizeCollaborator(entry: unknown): string | null {
 
 export async function fetchOrganizationCollaborators(context: BaseContext, org: string): Promise<string[]> {
   try {
-    const token = await getInstallationTokenForOrg(context, org);
-    const collaborators = await context.octokit.paginate(context.octokit.rest.orgs.listMembers, {
+    const octokit = await getOrgAuthenticatedOctokit(context, org);
+    const collaborators = await octokit.paginate(context.octokit.rest.orgs.listMembers, {
       org,
       per_page: 100,
-      ...(token ? { headers: { authorization: `token ${token}` } } : {}),
     });
 
     return collaborators.map(normalizeCollaborator).filter((login): login is string => Boolean(login));
