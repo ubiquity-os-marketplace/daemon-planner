@@ -5,11 +5,18 @@ type UserOrgMap = Map<string, string[]>;
 
 type CandidatePoolContext = Omit<Context, "candidates" | "tasks">;
 
+export type CandidateStatus = {
+  login: string;
+  isAvailable: boolean;
+  assignedIssueUrls: string[];
+};
+
 export class CandidatePool {
   private readonly _context: CandidatePoolContext;
   private readonly _orgCache = new Map<string, Promise<string[]>>();
   private _orgMembers: Promise<UserOrgMap> | null = null;
   private readonly _availability = new Map<string, Promise<boolean>>();
+  private readonly _startStatus = new Map<string, Promise<Awaited<ReturnType<typeof getStartStatus>>>>();
 
   constructor(context: CandidatePoolContext) {
     this._context = context;
@@ -64,6 +71,22 @@ export class CandidatePool {
     return members.includes(login);
   }
 
+  private _getStartStatus(login: string, issueUrl: string): Promise<Awaited<ReturnType<typeof getStartStatus>>> {
+    const normalized = login.trim();
+    if (!normalized) {
+      return Promise.resolve(null);
+    }
+
+    const cached = this._startStatus.get(normalized);
+    if (cached) {
+      return cached;
+    }
+
+    const pending = getStartStatus(this._context, normalized, issueUrl);
+    this._startStatus.set(normalized, pending);
+    return pending;
+  }
+
   private _isGloballyAvailable(login: string, issueUrl: string): Promise<boolean> {
     const normalized = login.trim();
     if (!normalized) {
@@ -75,7 +98,7 @@ export class CandidatePool {
       return cached;
     }
 
-    const pending = getStartStatus(this._context, normalized, issueUrl).then((payload) => payload?.computed.assignedIssues.length === 0);
+    const pending = this._getStartStatus(normalized, issueUrl).then((payload) => payload?.computed.assignedIssues.length === 0);
 
     this._availability.set(normalized, pending);
     return pending;
@@ -88,17 +111,35 @@ export class CandidatePool {
     return allowed.filter((login): login is string => Boolean(login));
   }
 
-  async getAllAvailableLogins(issueUrl: string): Promise<string[]> {
+  async getAllCandidateStatuses(issueUrl: string): Promise<CandidateStatus[]> {
     const byOrg = await this.getUsersByOrganization();
     const users = new Set<string>();
     for (const list of byOrg.values()) {
       for (const login of list) {
-        users.add(login);
+        const normalized = login.trim();
+        if (normalized) {
+          users.add(normalized);
+        }
       }
     }
 
-    const allowed = await Promise.all([...users].map(async (login) => ((await this._isGloballyAvailable(login, issueUrl)) ? login : null)));
+    const statuses = await Promise.all(
+      [...users].map(async (login) => {
+        const payload = await this._getStartStatus(login, issueUrl);
+        const assignedIssueUrls = (payload?.computed.assignedIssues ?? []).map((ref) => ref.html_url).filter((url): url is string => Boolean(url));
+        return {
+          login,
+          isAvailable: assignedIssueUrls.length === 0,
+          assignedIssueUrls,
+        } satisfies CandidateStatus;
+      })
+    );
 
-    return allowed.filter((login): login is string => Boolean(login)).sort((a, b) => a.localeCompare(b));
+    return statuses.sort((a, b) => a.login.localeCompare(b.login));
+  }
+
+  async getAllAvailableLogins(issueUrl: string): Promise<string[]> {
+    const statuses = await this.getAllCandidateStatuses(issueUrl);
+    return statuses.filter((entry) => entry.isAvailable).map((entry) => entry.login);
   }
 }

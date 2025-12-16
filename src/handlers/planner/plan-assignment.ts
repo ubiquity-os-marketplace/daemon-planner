@@ -23,12 +23,15 @@ export async function planAssignment(context: Context): Promise<void> {
   }
 
   const seedUrl = issueUrl(tasks[0].repository, tasks[0].issue);
-  const available = await context.candidates.getAllAvailableLogins(seedUrl);
+  const statuses = await context.candidates.getAllCandidateStatuses(seedUrl);
+  context.runSummary?.setCandidates(statuses);
+
+  const available = statuses.filter((entry) => entry.isAvailable).map((entry) => entry.login);
   const remaining = new Set(available);
 
-  context.runSummary?.setAvailableCandidates(available);
-
-  context.runSummary?.addAction(context.logger.info(`Selected ${tasks.length} task(s), ${available.length} candidate(s) available`).logMessage.raw);
+  context.runSummary?.addAction(
+    context.logger.info(`Selected ${tasks.length} task(s), ${available.length}/${statuses.length} candidate(s) available`).logMessage.raw
+  );
 
   for (const task of tasks) {
     if (remaining.size === 0) {
@@ -53,11 +56,6 @@ export async function planAssignment(context: Context): Promise<void> {
     const assigned = await planIssueAssignment(context, repository, issue, remaining);
     if (assigned) {
       remaining.delete(assigned);
-      context.runSummary?.addAssignedTask(assigned, {
-        owner: repository.owner,
-        repo: repository.name,
-        issueNumber: issue.number,
-      });
     }
   }
 }

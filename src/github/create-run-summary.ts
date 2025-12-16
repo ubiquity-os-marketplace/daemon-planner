@@ -4,30 +4,32 @@ export type RunSummaryTask = {
   issueNumber: number;
 };
 
+export type RunSummaryCandidate = {
+  login: string;
+  isAvailable: boolean;
+  assignedIssueUrls: string[];
+};
+
 export type RunSummary = {
   dryRun: boolean;
   actions: string[];
   consideredTasks: RunSummaryTask[];
-  availableCandidates: string[];
-  assignmentsByCandidate: Record<string, RunSummaryTask[]>;
+  candidates: RunSummaryCandidate[];
   addAction(action: string): void;
   setConsideredTasks(tasks: RunSummaryTask[]): void;
-  setAvailableCandidates(candidates: string[]): void;
-  addAssignedTask(login: string, task: RunSummaryTask): void;
+  setCandidates(candidates: RunSummaryCandidate[]): void;
 };
 
 export function createRunSummary(dryRun: boolean): RunSummary {
   const actions: string[] = [];
   const consideredTasks: RunSummaryTask[] = [];
-  const availableCandidates: string[] = [];
-  const assignmentsByCandidate: Record<string, RunSummaryTask[]> = {};
+  const candidates: RunSummaryCandidate[] = [];
 
   return {
     dryRun,
     actions,
     consideredTasks,
-    availableCandidates,
-    assignmentsByCandidate,
+    candidates,
     addAction(action: string) {
       actions.push(action);
     },
@@ -35,23 +37,9 @@ export function createRunSummary(dryRun: boolean): RunSummary {
       consideredTasks.length = 0;
       consideredTasks.push(...tasks);
     },
-    setAvailableCandidates(candidates: string[]) {
-      availableCandidates.length = 0;
-      availableCandidates.push(...candidates);
-    },
-    addAssignedTask(login: string, task: RunSummaryTask) {
-      const key = login.trim();
-      if (!key) {
-        return;
-      }
-
-      const existing = assignmentsByCandidate[key];
-      if (existing) {
-        existing.push(task);
-        return;
-      }
-
-      assignmentsByCandidate[key] = [task];
+    setCandidates(next: RunSummaryCandidate[]) {
+      candidates.length = 0;
+      candidates.push(...next);
     },
   };
 }
