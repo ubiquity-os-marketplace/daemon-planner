@@ -32,11 +32,11 @@ function parsePriorityFromLabel(label: string): number | null {
 }
 
 export class TaskPriorityPool {
-  private readonly _context: Pick<Context, "octokit" | "config" | "logger">;
+  private readonly _context: Pick<Context, "octokit" | "config" | "logger" | "env">;
   private _cachedTasks: Promise<TaskRef[]> | null = null;
-  private readonly _orgTokenCache = new Map<string, Promise<InstanceType<typeof customOctokit> | null>>();
+  private readonly _orgOctokitCache = new Map<string, Promise<InstanceType<typeof customOctokit> | null>>();
 
-  constructor(context: Pick<Context, "octokit" | "config" | "logger">) {
+  constructor(context: Pick<Context, "octokit" | "config" | "logger" | "env">) {
     this._context = context;
   }
 
@@ -46,13 +46,13 @@ export class TaskPriorityPool {
       return Promise.resolve(null);
     }
 
-    const cached = this._orgTokenCache.get(key);
+    const cached = this._orgOctokitCache.get(key);
     if (cached) {
       return cached;
     }
 
-    const pending = getOrgAuthenticatedOctokit(this._context as never, key);
-    this._orgTokenCache.set(key, pending);
+    const pending = getOrgAuthenticatedOctokit(this._context, key);
+    this._orgOctokitCache.set(key, pending);
     return pending;
   }
 
@@ -154,8 +154,10 @@ export class TaskPriorityPool {
     const organizations = Array.from(new Set(this._context.config.organizations.map((org) => org.trim()).filter((org) => Boolean(org))));
 
     for (const org of organizations) {
-      this._context.logger.debug(`Fetching tasks for ${org}`);
       const octokit = await this._getOrgOctokit(org);
+      this._context.logger.debug(`Fetching tasks for ${org}`, {
+        usingOrgOctokit: !!octokit,
+      });
       const repositories = await this._listAccessibleRepositories(octokit);
       const eligibleRepos = repositories.filter((repository) => {
         const owner = repository.owner?.login?.trim();
@@ -168,7 +170,7 @@ export class TaskPriorityPool {
 
       this._context.logger.debug(`Found ${eligibleRepos.length} repositories for ${org}`, {
         eligibleRepos,
-        repositories,
+        repositories: repositories.map((o) => `${o.owner?.login}/${o.name}`),
       });
       for (const repository of eligibleRepos) {
         const owner = repository.owner?.login;
