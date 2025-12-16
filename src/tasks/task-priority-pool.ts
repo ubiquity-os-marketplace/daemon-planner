@@ -154,6 +154,7 @@ export class TaskPriorityPool {
     const organizations = Array.from(new Set(this._context.config.organizations.map((org) => org.trim()).filter((org) => Boolean(org))));
 
     for (const org of organizations) {
+      this._context.logger.debug(`Fetching tasks for ${org}`);
       const octokit = await this._getOrgOctokit(org);
       const repositories = await this._listAccessibleRepositories(octokit);
       const eligibleRepos = repositories.filter((repository) => {
@@ -165,6 +166,10 @@ export class TaskPriorityPool {
         return !(repository.archived || repository.private);
       });
 
+      this._context.logger.debug(`Found ${eligibleRepos.length} repositories for ${org}`, {
+        eligibleRepos,
+        repositories,
+      });
       for (const repository of eligibleRepos) {
         const owner = repository.owner?.login;
         if (!owner) {
@@ -187,6 +192,7 @@ export class TaskPriorityPool {
       }
     }
 
+    this._context.logger.info(`Found ${tasks.length} tasks available for assignment.`, { tasks });
     return tasks;
   }
 }
