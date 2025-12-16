@@ -14,7 +14,21 @@ export const handlers = [
     const candidates = Array.isArray((body as { candidates?: unknown }).candidates) ? (body as { candidates?: unknown }).candidates : [];
     return HttpResponse.json({ candidates });
   }),
-  http.get("https://text-vector-embeddings-mai.deno.dev/recommendations", () => HttpResponse.json({ candidates: ["user2", "user1"] })),
+  http.get("https://text-vector-embeddings-mai.deno.dev/recommendations", ({ request }) => {
+    const url = new URL(request.url);
+    const issueUrl = url.searchParams.get("issueUrls") ?? "https://github.com/ubiquity/test-repo/issues/1";
+
+    return HttpResponse.json({
+      [issueUrl]: {
+        matchResultArray: {},
+        similarIssues: [],
+        sortedContributors: [
+          { login: "user1", matches: [], maxSimilarity: 0.9 },
+          { login: "user2", matches: [], maxSimilarity: 0.3 },
+        ],
+      },
+    });
+  }),
   http.get("https://command-start-stop-main.deno.dev/start", ({ request }) => {
     const url = new URL(request.url);
     const userId = url.searchParams.get("userId");

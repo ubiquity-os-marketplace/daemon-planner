@@ -2,17 +2,33 @@ import { getUserId } from "../../github/get-user-id";
 import { operations } from "../../types/generated/start-stop";
 import { PlannerContext, PlannerIssue, RepositoryRef } from "./types";
 
-export async function assignIssueToUser(context: PlannerContext, repository: RepositoryRef, issue: PlannerIssue, login: string): Promise<boolean> {
+function formatMatchPercent(similarity?: number | null): string {
+  if (similarity === null || similarity === undefined || !Number.isFinite(similarity)) {
+    return "";
+  }
+
+  return ` (${Math.round(similarity * 100)}%)`;
+}
+
+export async function assignIssueToUser(
+  context: PlannerContext,
+  repository: RepositoryRef,
+  issue: PlannerIssue,
+  login: string,
+  matchSimilarity?: number | null
+): Promise<boolean> {
   if (!issue?.number) {
     return false;
   }
 
   const issueUrl = `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`;
   const issueRef = `${repository.owner}/${repository.name}#${issue.number}`;
+  const match = formatMatchPercent(matchSimilarity);
 
   if (context.config.dryRun) {
     context.runSummary?.addAction(
-      context.logger.info(`Dry run: would assign ${issueRef} to ${login}`, { repository, issue: issue.number, chosen: login }).logMessage.raw
+      context.logger.info(`Dry run: would assign ${issueRef} to ${login}${match}`, { repository, issue: issue.number, chosen: login, matchSimilarity })
+        .logMessage.raw
     );
     return true;
   }
@@ -45,7 +61,8 @@ export async function assignIssueToUser(context: PlannerContext, repository: Rep
     }
 
     context.runSummary?.addAction(
-      context.logger.ok(`Assigned ${issueRef} to ${login}`, {
+      context.logger.ok(`Assigned ${issueRef} to ${login}${match}`, {
+        matchSimilarity,
         response: await response.json(),
       }).logMessage.raw
     );

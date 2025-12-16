@@ -20,3 +20,4 @@ src/types/generated
 
 # JetBrains
 .idea/
+*.env.json

@@ -28,7 +28,7 @@ export default createActionsPlugin<PluginSettings, Env, null, SupportedEvents>(
     settingsSchema: pluginSettingsSchema as unknown as Options["settingsSchema"],
     envSchema: envSchema as unknown as Options["envSchema"],
     ...(process.env.KERNEL_PUBLIC_KEY && { kernelPublicKey: process.env.KERNEL_PUBLIC_KEY }),
-    postCommentOnError: true,
+    postCommentOnError: false,
     bypassSignatureVerification: process.env.NODE_ENV === "local",
   }
 );

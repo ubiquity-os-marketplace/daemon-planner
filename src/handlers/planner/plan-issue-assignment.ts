@@ -1,3 +1,4 @@
+import { getRecommendedContributors } from "../../matchmaking/get-recommended-contributors";
 import { assignIssueToUser } from "./assign-issue-to-user";
 import { calculateWorkload } from "./calculate-workload";
 import { estimateIssueHours } from "./estimate-issue-hours";
@@ -61,9 +62,24 @@ export async function planIssueAssignment(
     return null;
   }
 
+  let scoredCandidates = candidates;
+  let recommendationByLogin: ReadonlyMap<string, number> = new Map();
+  try {
+    const recommendations = await getRecommendedContributors(context.env.MATCHMAKING_ENDPOINT, issueUrl);
+    recommendationByLogin = new Map(recommendations.map((entry) => [entry.login, entry.maxSimilarity] as const));
+    const threshold = context.config.recommendationThreshold ?? 0;
+    const relevant = recommendations.filter((entry) => entry.maxSimilarity >= threshold).map((entry) => entry.login);
+    const filtered = relevant.filter((login) => candidates.includes(login));
+    if (filtered.length > 0) {
+      scoredCandidates = filtered;
+    }
+  } catch (err) {
+    context.logger.warn("Failed to fetch matchmaking recommendations; falling back to workload-only assignment", { err: String(err) });
+  }
+
   const scores: CandidateScore[] = [];
 
-  for (const login of candidates) {
+  for (const login of scoredCandidates) {
     const issues = await getAssignedIssues(context, login, issueUrl);
     const load = calculateWorkload(issues, context.config);
     scores.push({ login, load });
@@ -91,5 +107,6 @@ export async function planIssueAssignment(
     return null;
   }
 
-  return (await assignIssueToUser(context, repository, issue, chosen.login)) ? chosen.login : null;
+  const matchSimilarity = recommendationByLogin.get(chosen.login);
+  return (await assignIssueToUser(context, repository, issue, chosen.login, matchSimilarity)) ? chosen.login : null;
 }

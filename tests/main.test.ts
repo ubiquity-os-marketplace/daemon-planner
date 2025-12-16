@@ -5,6 +5,7 @@ import { Logs } from "@ubiquity-os/ubiquity-os-logger";
 import dotenv from "dotenv";
 import { http, HttpResponse } from "msw";
 import manifest from "../manifest.json";
+import { createRunSummary } from "../src/github/create-run-summary";
 import { runPlugin } from "../src";
 import type { BaseContext } from "../src/types/context";
 import type { Env } from "../src/types/env";
@@ -53,6 +54,39 @@ describe("Plugin tests", () => {
     expect(issue?.assignees?.[0]?.login).toBe("user2");
   });
 
+  it("Should honor recommendationThreshold when selecting candidates", async () => {
+    server.use(
+      http.get("https://command-start-stop-main.deno.dev/start", () => {
+        return HttpResponse.json({
+          ok: true,
+          computed: { assignedIssues: [] },
+        });
+      }),
+      http.get("https://text-vector-embeddings-mai.deno.dev/recommendations", ({ request }) => {
+        const url = new URL(request.url);
+        const issueUrl = url.searchParams.get("issueUrls") ?? "https://github.com/ubiquity/test-repo/issues/1";
+
+        return HttpResponse.json({
+          [issueUrl]: {
+            matchResultArray: {},
+            similarIssues: [],
+            sortedContributors: [
+              { login: "user1", matches: [], maxSimilarity: 0.3 },
+              { login: "user2", matches: [], maxSimilarity: 0.9 },
+            ],
+          },
+        });
+      })
+    );
+
+    const context = createIssueOpenedContext({ recommendationThreshold: 0.5 });
+
+    await runPlugin(context);
+
+    const issue = db.issue.findFirst({ where: { number: { equals: 1 } } });
+    expect(issue?.assignees?.[0]?.login).toBe("user2");
+  });
+
   it("Should exclude candidates that are not allowed to start", async () => {
     server.use(
       http.get("https://command-start-stop-main.deno.dev/start", ({ request }) => {
@@ -60,7 +94,10 @@ describe("Plugin tests", () => {
         const userId = url.searchParams.get("userId");
 
         if (userId === "2") {
-          return HttpResponse.json({ ok: false });
+          return HttpResponse.json({
+            ok: false,
+            computed: { assignedIssues: [{ title: "not allowed", html_url: "https://github.com/ubiquity/os/issues/3" }] },
+          });
         }
 
         return HttpResponse.json({
@@ -77,6 +114,16 @@ describe("Plugin tests", () => {
     const issue = db.issue.findFirst({ where: { number: { equals: 1 } } });
     const assignees = (issue?.assignees as { login: string }[] | undefined) ?? [];
     expect(assignees.length).toBe(0);
+  });
+
+  it("Should include match percentage in GitHub summary actions", async () => {
+    const context = createIssueOpenedContext({ dryRun: true });
+    (context as unknown as { runSummary: ReturnType<typeof createRunSummary> }).runSummary = createRunSummary(true);
+
+    await runPlugin(context);
+
+    const actions = (context as unknown as { runSummary: ReturnType<typeof createRunSummary> }).runSummary.actions.join("\n");
+    expect(actions).toContain("(30%)");
   });
 });
 

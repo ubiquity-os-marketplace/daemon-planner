@@ -20,7 +20,7 @@ export default {
       {
         settingsSchema: pluginSettingsSchema as unknown as Options["settingsSchema"],
         envSchema: envSchema as unknown as Options["envSchema"],
-        postCommentOnError: true,
+        postCommentOnError: false,
         logLevel: (decodedEnv.LOG_LEVEL as LogLevel) || LOG_LEVEL.INFO,
         kernelPublicKey: decodedEnv.KERNEL_PUBLIC_KEY,
         bypassSignatureVerification: decodedEnv.NODE_ENV === "local",
