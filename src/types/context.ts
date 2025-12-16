@@ -1,5 +1,5 @@
 import { Context as PluginContext } from "@ubiquity-os/plugin-sdk";
-import type { CollaboratorPool } from "../collaborators/collaborator-pool";
+import type { CandidatePool } from "../candidates/candidate-pool";
 import type { RunSummary } from "../github/create-run-summary";
 import type { TaskPriorityPool } from "../tasks/task-priority-pool";
 import { Env } from "./env";
@@ -15,7 +15,7 @@ export interface PluginAdapters {
 
 export type Context<T extends SupportedEvents = SupportedEvents> = BaseContext<T> & {
   adapters: PluginAdapters;
-  collaborators: CollaboratorPool;
+  candidates: CandidatePool;
   tasks: TaskPriorityPool;
   runSummary?: RunSummary;
 };

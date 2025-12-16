@@ -8,24 +8,22 @@ function issueUrl(repository: RepositoryRef, issue: PlannerIssue): string {
 
 export async function planAssignment(context: Context): Promise<void> {
   const tasks = await context.tasks.getSortedAvailableTasks();
-  const limit = context.config.assignedTaskLimit;
-  const selected = tasks.slice(0, limit);
 
-  if (selected.length === 0) {
+  if (tasks.length === 0) {
     context.runSummary?.addAction(context.logger.info("No eligible tasks found").logMessage.raw);
     return;
   }
 
-  const seedUrl = issueUrl(selected[0].repository, selected[0].issue);
-  const available = await context.collaborators.getAllAvailableLogins(seedUrl);
+  const seedUrl = issueUrl(tasks[0].repository, tasks[0].issue);
+  const available = await context.candidates.getAllAvailableLogins(seedUrl);
   const remaining = new Set(available);
 
-  context.runSummary?.addAction(context.logger.info(`Selected ${selected.length} task(s), ${available.length} collaborator(s) available`).logMessage.raw);
-  console.log(`===> Selected ${selected.length} task(s), ${available.length} collaborator(s) available`);
+  context.runSummary?.addAction(context.logger.info(`Selected ${tasks.length} task(s), ${available.length} candidate(s) available`).logMessage.raw);
+  console.log(`===> Selected ${tasks.length} task(s), ${available.length} candidate(s) available`);
 
-  for (const task of selected) {
+  for (const task of tasks) {
     if (remaining.size === 0) {
-      context.runSummary?.addAction(context.logger.info("Stopping early (no collaborators left to assign)").logMessage.raw);
+      context.runSummary?.addAction(context.logger.info("Stopping early (no candidates left to assign)").logMessage.raw);
       return;
     }
 

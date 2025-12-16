@@ -1,5 +1,5 @@
 import { createAdapters } from "./adapters/create-adapters";
-import { CollaboratorPool } from "./collaborators/collaborator-pool";
+import { CandidatePool } from "./candidates/candidate-pool";
 import { planIssue } from "./handlers/plan-issue";
 import { TaskPriorityPool } from "./tasks/task-priority-pool";
 import { BaseContext, Context } from "./types/context";
@@ -7,10 +7,10 @@ import { isIssueClosedEvent, isIssueOpenedEvent, isIssueReopenedEvent } from "./
 
 export async function runPlugin(baseContext: BaseContext) {
   const adapters = createAdapters(baseContext);
-  const collaborators = new CollaboratorPool({ ...baseContext, adapters });
+  const candidates = new CandidatePool({ ...baseContext, adapters });
   const context = Object.assign(baseContext, {
     adapters,
-    collaborators,
+    candidates,
     tasks: new TaskPriorityPool(baseContext),
   }) as Context;
 

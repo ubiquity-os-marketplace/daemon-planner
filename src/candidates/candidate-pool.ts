@@ -3,15 +3,15 @@ import { Context } from "../types/context";
 
 type UserOrgMap = Map<string, string[]>;
 
-type CollaboratorPoolContext = Omit<Context, "collaborators" | "tasks">;
+type CandidatePoolContext = Omit<Context, "candidates" | "tasks">;
 
-export class CollaboratorPool {
-  private readonly _context: CollaboratorPoolContext;
+export class CandidatePool {
+  private readonly _context: CandidatePoolContext;
   private readonly _orgCache = new Map<string, Promise<string[]>>();
   private _orgMembers: Promise<UserOrgMap> | null = null;
   private readonly _availability = new Map<string, Promise<boolean>>();
 
-  constructor(context: CollaboratorPoolContext) {
+  constructor(context: CandidatePoolContext) {
     this._context = context;
   }
 
@@ -81,7 +81,7 @@ export class CollaboratorPool {
     return pending;
   }
 
-  async getAvailableCollaborators(org: string, issueUrl: string): Promise<string[]> {
+  async getAvailableCandidates(org: string, issueUrl: string): Promise<string[]> {
     const byOrg = await this.getUsersByOrganization();
     const members = byOrg.get(org.trim()) ?? [];
     const allowed = await Promise.all(members.map(async (login) => ((await this._isGloballyAvailable(login, issueUrl)) ? login : null)));

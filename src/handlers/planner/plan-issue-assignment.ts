@@ -2,7 +2,6 @@ import { assignIssueToUser } from "./assign-issue-to-user";
 import { calculateWorkload } from "./calculate-workload";
 import { estimateIssueHours } from "./estimate-issue-hours";
 import { getAssignedIssues } from "./get-assigned-issues";
-import { getCandidateLogins, getCandidateLoginsFromPool } from "./get-candidates";
 import { CandidateScore, PlannerContext, PlannerIssue, RepositoryRef } from "./types";
 
 export function currentAssignees(issue: PlannerIssue): string[] {
@@ -44,9 +43,18 @@ export async function planIssueAssignment(
     return null;
   }
 
-  const candidates = allowedLogins
-    ? await getCandidateLoginsFromPool(context, repository, issue, allowedLogins)
-    : await getCandidateLogins(context, repository, issue);
+  const issueUrl = `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`;
+
+  let candidates: string[];
+  if (allowedLogins) {
+    candidates = [...allowedLogins];
+  } else {
+    const tasks = await context.tasks.getSortedAvailableTasks();
+    const seed = tasks[0];
+    const seedUrl = seed ? `https://github.com/${seed.repository.owner}/${seed.repository.name}/issues/${seed.issue.number}` : issueUrl;
+
+    candidates = await context.candidates.getAllAvailableLogins(seedUrl);
+  }
 
   if (candidates.length === 0) {
     context.runSummary?.addAction(context.logger.warn(`No candidates available for ${issueRef}`).logMessage.raw);
@@ -54,7 +62,6 @@ export async function planIssueAssignment(
   }
 
   const scores: CandidateScore[] = [];
-  const issueUrl = `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`;
 
   for (const login of candidates) {
     const issues = await getAssignedIssues(context, login, issueUrl);
