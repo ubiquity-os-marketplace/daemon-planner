@@ -62,11 +62,14 @@ export async function planIssueAssignment(
     return null;
   }
 
-  let scoredCandidates = candidates;
+  let scoredCandidates: typeof candidates = [];
   let recommendationByLogin: ReadonlyMap<string, number> = new Map();
   try {
     const recommendations = await getRecommendedContributors(context.env.MATCHMAKING_ENDPOINT, issueUrl);
     recommendationByLogin = new Map(recommendations.map((entry) => [entry.login, entry.maxSimilarity] as const));
+    context.logger.debug("Using the current recommendation list for logins", {
+      recommendationByLogin,
+    });
     const threshold = context.config.recommendationThreshold ?? 0;
     const relevant = recommendations.filter((entry) => entry.maxSimilarity >= threshold).map((entry) => entry.login);
     const filtered = relevant.filter((login) => candidates.includes(login));
