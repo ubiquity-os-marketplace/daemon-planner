@@ -194,7 +194,9 @@ export class TaskPriorityPool {
       }
     }
 
-    this._context.logger.info(`Found ${tasks.length} tasks available for assignment.`, { tasks });
+    this._context.logger.info(`Found ${tasks.length} tasks available for assignment.`, {
+      tasks: tasks.map((task) => `${task.repository.name}/${task.repository.name}#${task.issue.number}`),
+    });
     return tasks;
   }
 }
