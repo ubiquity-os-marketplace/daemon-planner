@@ -122,28 +122,28 @@ export class TaskPriorityPool {
     octokit?: InstanceType<typeof customOctokit> | null
   ): Promise<Array<{ name: string; archived?: boolean; private?: boolean; owner?: { login?: string | null } | null }>> {
     try {
-      return await (octokit ?? this._context.octokit).paginate(this._context.octokit.rest.apps.listReposAccessibleToInstallation, {
+      const octokitInstance = octokit ?? this._context.octokit;
+      return await octokitInstance.paginate(octokitInstance.rest.apps.listReposAccessibleToInstallation, {
         per_page: 100,
       });
-    } catch (error) {
-      const cause = error instanceof Error ? error : new Error(String(error));
-      this._context.logger.error("Failed to list repositories accessible to installation", { error: cause });
+    } catch (err) {
+      this._context.logger.error("Failed to list repositories accessible to installation", { err });
       return [];
     }
   }
 
   private async _listUnassignedIssues(owner: string, repo: string, octokit?: InstanceType<typeof customOctokit> | null): Promise<PlannerIssue[]> {
     try {
-      return await (octokit ?? this._context.octokit).paginate(this._context.octokit.rest.issues.listForRepo, {
+      const octokitInstance = octokit ?? this._context.octokit;
+      return await octokitInstance.paginate(octokitInstance.rest.issues.listForRepo, {
         owner,
         repo,
         state: "open",
         assignee: "none",
         per_page: 100,
       });
-    } catch (error) {
-      const cause = error instanceof Error ? error : new Error(String(error));
-      this._context.logger.error(`Failed to list issues for ${owner}/${repo}`, { error: cause });
+    } catch (err) {
+      this._context.logger.error(`Failed to list issues for ${owner}/${repo}`, { err });
       return [];
     }
   }
@@ -169,7 +169,7 @@ export class TaskPriorityPool {
       });
 
       this._context.logger.debug(`Found ${eligibleRepos.length} repositories for ${org}`, {
-        eligibleRepos,
+        eligibleRepos: eligibleRepos.map((o) => `${o.owner?.login}/${o.name}`),
         repositories: repositories.map((o) => `${o.owner?.login}/${o.name}`),
       });
       for (const repository of eligibleRepos) {

@@ -27,6 +27,7 @@ export async function getOrgAuthenticatedOctokit(context: TokenContext, org: str
       const installation = await appOctokit.rest.apps.getOrgInstallation({
         org: trimmedOrg,
       });
+      logger.debug(`Getting installation token for ${trimmedOrg} (installation ID: ${installation.data.id})`);
       return new customOctokit({
         authStrategy: createAppAuth,
         auth: {
