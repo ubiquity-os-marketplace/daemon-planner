@@ -37,9 +37,9 @@
         "type": "number"
       },
       "recommendationThreshold": {
-        "default": 0.2,
+        "default": 20,
         "minimum": 0,
-        "maximum": 1,
+        "maximum": 100,
         "description": "Minimum matchmaking relevance score required for a user to be considered for assignment.",
         "type": "number"
       },
