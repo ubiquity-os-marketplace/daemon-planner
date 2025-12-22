@@ -2,7 +2,6 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { drop } from "@mswjs/data";
 import { customOctokit as Octokit } from "@ubiquity-os/plugin-sdk/octokit";
 import { Logs } from "@ubiquity-os/ubiquity-os-logger";
-import dotenv from "dotenv";
 import { http, HttpResponse } from "msw";
 import manifest from "../manifest.json";
 import { runPlugin } from "../src";
@@ -16,7 +15,6 @@ import issueTemplate from "./__mocks__/issue-template";
 import { server } from "./__mocks__/node";
 import { STRINGS } from "./__mocks__/strings";
 
-dotenv.config();
 const octokit = new Octokit();
 (octokit as unknown as { auth: (...args: unknown[]) => Promise<{ token: string }> }).auth = async () => ({ token: "test-token" });
 
