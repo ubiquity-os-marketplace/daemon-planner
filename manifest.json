@@ -15,25 +15,10 @@
           "type": "string"
         }
       },
-      "dailyCapacityHours": {
-        "default": 6,
-        "minimum": 1,
-        "description": "The daily work capacity.",
-        "type": "number"
-      },
-      "planningHorizonDays": {
-        "default": 5,
-        "minimum": 1,
-        "type": "number"
-      },
-      "reviewBufferHours": {
-        "default": 2,
-        "minimum": 0,
-        "type": "number"
-      },
       "assignedTaskLimit": {
         "default": 1,
         "minimum": 1,
+        "description": "Maximum number of tasks that a user can be assigned to.",
         "type": "number"
       },
       "recommendationThreshold": {
