@@ -56,7 +56,7 @@ export async function planAssignment(context: Context): Promise<void> {
     const orgCandidates = await context.candidates.getAvailableCandidates(repository.owner, seedUrl);
     const allowed = orgCandidates.filter((login) => remaining.has(login));
     if (allowed.length === 0) {
-      context.runSummary?.addAction(context.logger.warn(`No candidates available for ${repository.owner} tasks`).logMessage.raw);
+      context.logger.warn(`No candidates available for ${repository.owner} tasks`);
       continue;
     }
 

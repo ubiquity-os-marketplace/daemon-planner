@@ -41,7 +41,7 @@ function formatCandidates(summary: RunSummary): string {
 
   const shouldIncludeDryRunPlan = summary.dryRun;
   if (shouldIncludeDryRunPlan) {
-    lines.push("| Username | Availability | Assigned issues | Dry run plan |");
+    lines.push("| Username | Availability | Assigned issues | Assignment Plan |");
     lines.push("| --- | --- | --- | --- |");
   } else {
     lines.push("| Username | Availability | Assigned issues |");
