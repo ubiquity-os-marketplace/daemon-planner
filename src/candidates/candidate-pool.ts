@@ -1,7 +1,8 @@
+import { RestEndpointMethodTypes } from "@ubiquity-os/plugin-sdk/octokit";
 import { getStartStatus } from "../start-stop/get-start-status";
 import { Context } from "../types/context";
 
-type UserOrgMap = Map<string, string[]>;
+type UserOrgMap = Map<string, RestEndpointMethodTypes["orgs"]["listMembers"]["response"]["data"]>;
 
 type CandidatePoolContext = Omit<Context, "candidates" | "tasks">;
 
@@ -13,7 +14,7 @@ export type CandidateStatus = {
 
 export class CandidatePool {
   private readonly _context: CandidatePoolContext;
-  private readonly _orgCache = new Map<string, Promise<string[]>>();
+  private readonly _orgCache = new Map<string, Promise<RestEndpointMethodTypes["orgs"]["listMembers"]["response"]["data"]>>();
   private _orgMembers: Promise<UserOrgMap> | null = null;
   private readonly _availability = new Map<string, Promise<boolean>>();
   private readonly _startStatus = new Map<string, Promise<Awaited<ReturnType<typeof getStartStatus>>>>();
@@ -22,7 +23,7 @@ export class CandidatePool {
     this._context = context;
   }
 
-  getOrganizationCollaborators(org: string): Promise<string[]> {
+  getOrganizationCollaborators(org: string): Promise<RestEndpointMethodTypes["orgs"]["listMembers"]["response"]["data"]> {
     const trimmed = org.trim();
 
     if (!trimmed) {
@@ -34,7 +35,7 @@ export class CandidatePool {
       return cached;
     }
 
-    const pending = this._context.adapters.getOrganizationCollaborators(trimmed).then((collaborators) => Array.from(new Set(collaborators)));
+    const pending = this._context.adapters.getOrganizationCollaborators(trimmed);
 
     this._orgCache.set(trimmed, pending);
 
@@ -64,13 +65,6 @@ export class CandidatePool {
     return this._orgMembers;
   }
 
-  async isMemberOfOrg(login: string, org: string): Promise<boolean> {
-    const usersByOrg = await this.getUsersByOrganization();
-    const key = org.trim();
-    const members = usersByOrg.get(key) ?? [];
-    return members.includes(login);
-  }
-
   private _getStartStatus(login: string, issueUrl: string): Promise<Awaited<ReturnType<typeof getStartStatus>>> {
     const normalized = login.trim();
     if (!normalized) {
@@ -87,8 +81,8 @@ export class CandidatePool {
     return pending;
   }
 
-  private _isGloballyAvailable(login: string, issueUrl: string): Promise<boolean> {
-    const normalized = login.trim();
+  private _isGloballyAvailable(user: RestEndpointMethodTypes["orgs"]["listMembers"]["response"]["data"][0], issueUrl: string): Promise<boolean> {
+    const normalized = user.login.trim();
     if (!normalized) {
       return Promise.resolve(false);
     }
@@ -104,19 +98,19 @@ export class CandidatePool {
     return pending;
   }
 
-  async getAvailableCandidates(org: string, issueUrl: string): Promise<string[]> {
+  async getAvailableCandidates(org: string, issueUrl: string): Promise<RestEndpointMethodTypes["orgs"]["listMembers"]["response"]["data"]> {
     const byOrg = await this.getUsersByOrganization();
     const members = byOrg.get(org.trim()) ?? [];
     const allowed = await Promise.all(members.map(async (login) => ((await this._isGloballyAvailable(login, issueUrl)) ? login : null)));
-    return allowed.filter((login): login is string => Boolean(login));
+    return allowed.filter((login) => Boolean(login)) as RestEndpointMethodTypes["orgs"]["listMembers"]["response"]["data"];
   }
 
   async getAllCandidateStatuses(issueUrl: string): Promise<CandidateStatus[]> {
     const byOrg = await this.getUsersByOrganization();
     const users = new Set<string>();
     for (const list of byOrg.values()) {
-      for (const login of list) {
-        const normalized = login.trim();
+      for (const user of list) {
+        const normalized = user.login.trim();
         if (normalized) {
           users.add(normalized);
         }

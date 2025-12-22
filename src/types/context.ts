@@ -1,4 +1,5 @@
 import { Context as PluginContext } from "@ubiquity-os/plugin-sdk";
+import { RestEndpointMethodTypes } from "@ubiquity-os/plugin-sdk/octokit";
 import type { CandidatePool } from "../candidates/candidate-pool";
 import type { RunSummary } from "../github/create-run-summary";
 import type { OrgOctokitPool } from "../github/org-octokit-pool";
@@ -11,7 +12,7 @@ export type SupportedEvents = "issues.opened" | "issues.reopened" | "issues.clos
 export type BaseContext<T extends SupportedEvents = SupportedEvents> = PluginContext<PluginSettings, Env, null, T>;
 
 export interface PluginAdapters {
-  getOrganizationCollaborators(org: string): Promise<string[]>;
+  getOrganizationCollaborators(org: string): Promise<RestEndpointMethodTypes["orgs"]["listMembers"]["response"]["data"]>;
 }
 
 export type Context<T extends SupportedEvents = SupportedEvents> = BaseContext<T> & {

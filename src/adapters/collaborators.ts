@@ -1,33 +1,19 @@
+import { RestEndpointMethodTypes } from "@ubiquity-os/plugin-sdk/octokit";
 import type { Context } from "../types/context";
 
-function normalizeCollaborator(entry: unknown): string | null {
-  if (typeof entry === "string") {
-    return entry;
-  }
-
-  if (entry && typeof entry === "object") {
-    const login = (entry as { login?: unknown }).login;
-
-    if (typeof login === "string") {
-      return login;
-    }
-  }
-
-  return null;
-}
-
-export async function fetchOrganizationCollaborators(context: Pick<Context, "octokits" | "octokit" | "logger" | "env">, org: string): Promise<string[]> {
+export async function fetchOrganizationCollaborators(
+  context: Pick<Context, "octokits" | "octokit" | "logger" | "env">,
+  org: string
+): Promise<RestEndpointMethodTypes["orgs"]["listMembers"]["response"]["data"]> {
   try {
     const octokit = await context.octokits.get(org);
-    const collaborators = await octokit.paginate(octokit.rest.orgs.listMembers, {
+
+    return await octokit.paginate(octokit.rest.orgs.listMembers, {
       org,
       per_page: 100,
     });
-
-    return collaborators.map(normalizeCollaborator).filter((login): login is string => Boolean(login));
-  } catch (error) {
-    const cause = error instanceof Error ? error : new Error(String(error));
-    context.logger.error(`Failed to fetch collaborators for ${org}`, { error: cause });
+  } catch (err) {
+    context.logger.error(`Failed to fetch collaborators for ${org}`, { err });
     return [];
   }
 }
