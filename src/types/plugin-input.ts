@@ -12,9 +12,9 @@ export const pluginSettingsSchema = T.Object(
     reviewBufferHours: T.Number({ default: 2, minimum: 0 }),
     assignedTaskLimit: T.Number({ default: 1, minimum: 1 }),
     recommendationThreshold: T.Number({
-      default: 0.2,
+      default: 20,
       minimum: 0,
-      maximum: 1,
+      maximum: 100,
       description: "Minimum matchmaking relevance score required for a user to be considered for assignment.",
     }),
     dryRun: T.Boolean({

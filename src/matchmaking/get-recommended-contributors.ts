@@ -4,9 +4,12 @@ type RecommendationsResponse = operations["getRecommendations"]["responses"][200
 type RecommendationBucket = NonNullable<RecommendationsResponse[string]>;
 export type RecommendedContributor = RecommendationBucket["sortedContributors"][number];
 
-export async function getRecommendedContributors(matchmakingEndpoint: string, issueUrl: string): Promise<RecommendedContributor[]> {
+export async function getRecommendedContributors(matchmakingEndpoint: string, issueUrl: string, candidates: string[]): Promise<RecommendedContributor[]> {
   const url = new URL("/recommendations", matchmakingEndpoint);
   url.searchParams.append("issueUrls", issueUrl);
+  for (const candidate of candidates) {
+    url.searchParams.append("users", candidate);
+  }
 
   const response = await fetch(url.toString(), { method: "GET" });
   if (!response.ok) {

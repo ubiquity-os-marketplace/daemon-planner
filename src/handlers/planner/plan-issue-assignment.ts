@@ -65,19 +65,19 @@ export async function planIssueAssignment(
   let scoredCandidates: typeof candidates = [];
   let recommendationByLogin: ReadonlyMap<string, number> = new Map();
   try {
-    const recommendations = await getRecommendedContributors(context.env.MATCHMAKING_ENDPOINT, issueUrl);
+    const recommendations = await getRecommendedContributors(context.env.MATCHMAKING_ENDPOINT, issueUrl, candidates);
     recommendationByLogin = new Map(recommendations.map((entry) => [entry.login, entry.maxSimilarity] as const));
     context.logger.debug("Using the current recommendation list for logins", {
       recommendationByLogin,
     });
-    const threshold = context.config.recommendationThreshold ?? 0;
+    const threshold = context.config.recommendationThreshold;
     const relevant = recommendations.filter((entry) => entry.maxSimilarity >= threshold).map((entry) => entry.login);
     const filtered = relevant.filter((login) => candidates.includes(login));
     if (filtered.length > 0) {
       scoredCandidates = filtered;
     }
   } catch (err) {
-    context.logger.warn("Failed to fetch matchmaking recommendations; falling back to workload-only assignment", { err: String(err) });
+    context.logger.warn("Failed to fetch matchmaking recommendations; falling back to workload-only assignment", { err });
   }
 
   const scores: CandidateScore[] = [];
