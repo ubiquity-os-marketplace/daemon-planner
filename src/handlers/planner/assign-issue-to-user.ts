@@ -27,7 +27,8 @@ export async function assignIssueToUser(
   const match = formatMatchPercent(matchSimilarity);
 
   if (context.config.dryRun) {
-    context.runSummary?.addAction(
+    context.runSummary?.addCandidateDryRunPlan(
+      login,
       context.logger.info(`Dry run: would assign ${issueRef} to ${login}${match}`, { repository, issue: issue.number, chosen: login, matchSimilarity })
         .logMessage.raw
     );

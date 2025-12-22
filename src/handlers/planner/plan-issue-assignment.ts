@@ -89,7 +89,7 @@ export async function planIssueAssignment(
   }
 
   if (scores.length === 0) {
-    context.runSummary?.addAction(context.logger.warn(`Failed to calculate workloads for ${issueRef}`).logMessage.raw);
+    context.runSummary?.addAction(context.logger.warn(`Failed to calculate workloads for ${issueRef}`, { issueUrl }).logMessage.raw);
     return null;
   }
 
