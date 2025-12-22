@@ -1,5 +1,4 @@
 import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
-import { getOrgAuthenticatedOctokit } from "../github/get-org-authenticated-octokit";
 import { estimateIssueHours } from "../handlers/planner/estimate-issue-hours";
 import { PlannerIssue, PlannerLabel, RepositoryRef } from "../handlers/planner/types";
 import { Context } from "../types/context";
@@ -32,28 +31,11 @@ function parsePriorityFromLabel(label: string): number | null {
 }
 
 export class TaskPriorityPool {
-  private readonly _context: Pick<Context, "octokit" | "config" | "logger" | "env">;
+  private readonly _context: Pick<Context, "octokit" | "octokits" | "config" | "logger" | "env">;
   private _cachedTasks: Promise<TaskRef[]> | null = null;
-  private readonly _orgOctokitCache = new Map<string, Promise<InstanceType<typeof customOctokit> | null>>();
 
-  constructor(context: Pick<Context, "octokit" | "config" | "logger" | "env">) {
+  constructor(context: Pick<Context, "octokit" | "octokits" | "config" | "logger" | "env">) {
     this._context = context;
-  }
-
-  private _getOrgOctokit(org: string): Promise<InstanceType<typeof customOctokit> | null> {
-    const key = org.trim();
-    if (!key) {
-      return Promise.resolve(null);
-    }
-
-    const cached = this._orgOctokitCache.get(key);
-    if (cached) {
-      return cached;
-    }
-
-    const pending = getOrgAuthenticatedOctokit(this._context, key);
-    this._orgOctokitCache.set(key, pending);
-    return pending;
   }
 
   private static _getIssuePriorityOrNull(issue: PlannerIssue): number | null {
@@ -154,7 +136,7 @@ export class TaskPriorityPool {
     const organizations = Array.from(new Set(this._context.config.organizations.map((org) => org.trim()).filter((org) => Boolean(org))));
 
     for (const org of organizations) {
-      const octokit = await this._getOrgOctokit(org);
+      const octokit = await this._context.octokits.get(org);
       this._context.logger.debug(`Fetching tasks for ${org}`, {
         usingOrgOctokit: !!octokit,
       });

@@ -1,5 +1,4 @@
-import { getOrgAuthenticatedOctokit } from "../github/get-org-authenticated-octokit";
-import { BaseContext } from "../types/context";
+import type { Context } from "../types/context";
 
 function normalizeCollaborator(entry: unknown): string | null {
   if (typeof entry === "string") {
@@ -17,10 +16,10 @@ function normalizeCollaborator(entry: unknown): string | null {
   return null;
 }
 
-export async function fetchOrganizationCollaborators(context: BaseContext, org: string): Promise<string[]> {
+export async function fetchOrganizationCollaborators(context: Pick<Context, "octokits" | "octokit" | "logger" | "env">, org: string): Promise<string[]> {
   try {
-    const octokit = await getOrgAuthenticatedOctokit(context, org);
-    const collaborators = await octokit.paginate(context.octokit.rest.orgs.listMembers, {
+    const octokit = await context.octokits.get(org);
+    const collaborators = await octokit.paginate(octokit.rest.orgs.listMembers, {
       org,
       per_page: 100,
     });

@@ -1,6 +1,7 @@
 import { Context as PluginContext } from "@ubiquity-os/plugin-sdk";
 import type { CandidatePool } from "../candidates/candidate-pool";
 import type { RunSummary } from "../github/create-run-summary";
+import type { OrgOctokitPool } from "../github/org-octokit-pool";
 import type { TaskPriorityPool } from "../tasks/task-priority-pool";
 import { Env } from "./env";
 import { PluginSettings } from "./plugin-input";
@@ -16,6 +17,7 @@ export interface PluginAdapters {
 export type Context<T extends SupportedEvents = SupportedEvents> = BaseContext<T> & {
   adapters: PluginAdapters;
   candidates: CandidatePool;
+  octokits: OrgOctokitPool;
   tasks: TaskPriorityPool;
   runSummary?: RunSummary;
 };

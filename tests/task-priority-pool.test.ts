@@ -1,4 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
+import { OrgOctokitPool } from "../src/github/org-octokit-pool";
 import { TaskPriorityPool } from "../src/tasks/task-priority-pool";
 import type { PluginSettings } from "../src/types/plugin-input";
 
@@ -9,6 +10,7 @@ function createOctokitStub() {
   const issuesByRepo = new Map<string, Array<{ number: number; labels?: Array<{ name?: string | null } | string | null> }>>();
 
   const installationIdByOrg = new Map<string, number>();
+  // eslint-disable-next-line sonarjs/no-unused-collection
   const orgByInstallationId = new Map<number, string>();
 
   function emptyListResponse(kind: "installation" | "repo", params: unknown) {
@@ -46,10 +48,7 @@ function createOctokitStub() {
         if (mapFn) {
           throw new Error("Unexpected mapFn for listReposAccessibleToInstallation");
         }
-        const auth = (params as unknown as { headers?: { authorization?: string } }).headers?.authorization ?? "";
-        const match = /^token\s+token-(\d+)$/.exec(auth);
-        const org = match ? orgByInstallationId.get(Number(match[1])) : null;
-        return org ? accessibleRepos.filter((repo) => repo.owner?.login === org) : [];
+        return accessibleRepos;
       }
 
       if (method === listForRepo) {
@@ -105,12 +104,22 @@ describe("TaskPriorityPool", () => {
     const context = {
       octokit: stub.octokit,
       config,
+      env: {},
       logger: {
+        debug: () => undefined,
         error: () => undefined,
+        info: () => undefined,
       },
-    } as unknown as { octokit: typeof stub.octokit; config: PluginSettings; logger: { error: (msg: string, data?: unknown) => void } };
+    } as unknown as {
+      octokit: typeof stub.octokit;
+      config: PluginSettings;
+      env: Record<string, unknown>;
+      logger: { debug: (msg: string, data?: unknown) => void; error: (msg: string, data?: unknown) => void; info: (msg: string, data?: unknown) => void };
+    };
 
-    const pool = new TaskPriorityPool(context as never);
+    const octokits = new OrgOctokitPool(context as never);
+
+    const pool = new TaskPriorityPool({ ...context, octokits } as never);
 
     const first = await pool.getSortedAvailableTasks();
     const second = await pool.getSortedAvailableTasks();

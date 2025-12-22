@@ -1,7 +1,7 @@
-import { BaseContext, PluginAdapters } from "../types/context";
+import { Context, PluginAdapters } from "../types/context";
 import { fetchOrganizationCollaborators } from "./collaborators";
 
-export function createAdapters(context: BaseContext): PluginAdapters {
+export function createAdapters(context: Pick<Context, "octokit" | "logger" | "env" | "octokits">): PluginAdapters {
   return {
     getOrganizationCollaborators: (org) => fetchOrganizationCollaborators(context, org),
   };
