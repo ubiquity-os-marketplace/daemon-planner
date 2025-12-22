@@ -1,8 +1,5 @@
 import { getRecommendedContributors } from "../../matchmaking/get-recommended-contributors";
 import { assignIssueToUser } from "./assign-issue-to-user";
-import { calculateWorkload } from "./calculate-workload";
-import { estimateIssueHours } from "./estimate-issue-hours";
-import { getAssignedIssues } from "./get-assigned-issues";
 import { CandidateScore, PlannerContext, PlannerIssue, RepositoryRef } from "./types";
 
 export function currentAssignees(issue: PlannerIssue): string[] {
@@ -20,6 +17,14 @@ export function currentAssignees(issue: PlannerIssue): string[] {
 
 function sortByWorkload(collection: CandidateScore[]): CandidateScore[] {
   return [...collection].sort((a, b) => a.load - b.load);
+}
+
+function normalizeSimilarity(value: number | null | undefined): number {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return 0;
+  }
+
+  return value > 1 ? value / 100 : value;
 }
 
 export async function planIssueAssignment(
@@ -62,19 +67,24 @@ export async function planIssueAssignment(
     return null;
   }
 
-  let scoredCandidates: typeof candidates = [];
+  let scoredCandidates: typeof candidates = candidates;
   let recommendationByLogin: ReadonlyMap<string, number> = new Map();
   try {
     const recommendations = await getRecommendedContributors(context.env.MATCHMAKING_ENDPOINT, issueUrl, candidates);
-    recommendationByLogin = new Map(recommendations.map((entry) => [entry.login, entry.maxSimilarity] as const));
+    recommendationByLogin = new Map(recommendations.map((entry) => [entry.login, normalizeSimilarity(entry.maxSimilarity)] as const));
     context.logger.debug("Using the current recommendation list for logins", {
       recommendationByLogin,
       issueUrl,
       candidates,
     });
-    const threshold = context.config.recommendationThreshold;
-    const relevant = recommendations.filter((entry) => entry.maxSimilarity >= threshold).map((entry) => entry.login);
-    const filtered = relevant.filter((login) => candidates.includes(login));
+
+    const threshold = normalizeSimilarity(context.config.recommendationThreshold);
+    const filtered = recommendations
+      .map((entry) => ({ login: entry.login, similarity: normalizeSimilarity(entry.maxSimilarity) }))
+      .filter((entry) => entry.similarity >= threshold)
+      .map((entry) => entry.login)
+      .filter((login) => candidates.includes(login));
+
     if (filtered.length > 0) {
       scoredCandidates = filtered;
     }
@@ -82,30 +92,15 @@ export async function planIssueAssignment(
     context.logger.warn("Failed to fetch matchmaking recommendations; falling back to workload-only assignment", { err });
   }
 
-  const scores: CandidateScore[] = [];
+  const statuses = await context.candidates.getAllCandidateStatuses(issueUrl);
+  const assignedCountByLogin = new Map(statuses.map((entry) => [entry.login, entry.assignedIssueUrls.length] as const));
 
-  for (const login of scoredCandidates) {
-    const issues = await getAssignedIssues(context, login, issueUrl);
-    const load = calculateWorkload(issues, context.config);
-    scores.push({ login, load });
-  }
+  const scores: CandidateScore[] = scoredCandidates.map((login) => ({
+    login,
+    load: assignedCountByLogin.get(login) ?? Number.POSITIVE_INFINITY,
+  }));
 
-  if (scores.length === 0) {
-    context.logger.info(`No candidate available for ${issueRef}`, { issueUrl, scoredCandidates });
-    return null;
-  }
-
-  const issueHours = estimateIssueHours(issue, context.config);
-  if (issueHours === null) {
-    context.runSummary?.addAction(context.logger.warn(`Failed to estimate hours for ${issueRef}`).logMessage.raw);
-    return null;
-  }
-  const estimate = issueHours + context.config.reviewBufferHours;
-  const capacity = context.config.dailyCapacityHours * context.config.planningHorizonDays;
-
-  const available = sortByWorkload(scores.filter((entry) => entry.load + estimate <= capacity));
-  const fallback = sortByWorkload(scores);
-  const chosen = (available.length > 0 ? available : fallback)[0];
+  const chosen = sortByWorkload(scores)[0];
 
   if (!chosen) {
     context.runSummary?.addAction(context.logger.warn(`Could not assign ${issueRef} to any user`).logMessage.raw);

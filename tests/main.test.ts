@@ -215,9 +215,7 @@ describe("Plugin tests", () => {
 function createConfig(overrides: Partial<PluginSettings> = {}): PluginSettings {
   return {
     organizations: ["ubiquity", "ubiquity-os", "ubiquity-os-marketplace"],
-    dailyCapacityHours: 6,
-    planningHorizonDays: 5,
-    reviewBufferHours: 2,
+    assignedTaskLimit: 1,
     defaultEstimateHours: 4,
     ...overrides,
   } as PluginSettings;

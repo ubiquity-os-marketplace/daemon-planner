@@ -92,7 +92,8 @@ export class CandidatePool {
       return cached;
     }
 
-    const pending = this._getStartStatus(normalized, issueUrl).then((payload) => payload?.computed.assignedIssues.length === 0);
+    const limit = this._context.config.assignedTaskLimit;
+    const pending = this._getStartStatus(normalized, issueUrl).then((payload) => (payload?.computed.assignedIssues.length ?? 0) < limit);
 
     this._availability.set(normalized, pending);
     return pending;
@@ -121,9 +122,10 @@ export class CandidatePool {
       [...users].map(async (login) => {
         const payload = await this._getStartStatus(login, issueUrl);
         const assignedIssueUrls = (payload?.computed.assignedIssues ?? []).map((ref) => ref.html_url).filter((url): url is string => Boolean(url));
+        const isAvailable = assignedIssueUrls.length < this._context.config.assignedTaskLimit;
         return {
           login,
-          isAvailable: assignedIssueUrls.length === 0,
+          isAvailable,
           assignedIssueUrls,
         } satisfies CandidateStatus;
       })

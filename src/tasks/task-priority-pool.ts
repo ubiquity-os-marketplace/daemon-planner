@@ -118,7 +118,7 @@ export class TaskPriorityPool {
       const parsed = parsePriceTagFromLabel(labelName(label));
       return parsed !== null;
     });
-    const hasTime = estimateIssueHours(issue, this._context.config) !== null;
+    const hasTime = estimateIssueHours(issue) !== null;
 
     return hasPriority && hasPriceTag && hasTime;
   }

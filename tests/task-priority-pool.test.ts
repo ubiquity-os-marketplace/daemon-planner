@@ -95,9 +95,6 @@ describe("TaskPriorityPool", () => {
 
     const config = {
       organizations: ["org-a", "org-b"],
-      dailyCapacityHours: 6,
-      planningHorizonDays: 5,
-      reviewBufferHours: 2,
       assignedTaskLimit: 1,
     } as PluginSettings;
 

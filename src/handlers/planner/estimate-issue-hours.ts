@@ -1,5 +1,4 @@
 import ms from "ms";
-import { PluginSettings } from "../../types/plugin-input";
 import { PlannerIssue, PlannerLabel } from "./types";
 
 function labelName(label: PlannerLabel | string): string {
@@ -10,7 +9,7 @@ function labelName(label: PlannerLabel | string): string {
   return label?.name ?? String();
 }
 
-function parseDurationHours(value: string, config: PluginSettings): number | null {
+function parseDurationHours(value: string): number | null {
   const cleaned = value.replace(/[<>]/g, String()).trim();
   const duration = ms(cleaned.toLowerCase());
 
@@ -31,11 +30,11 @@ function parseDurationHours(value: string, config: PluginSettings): number | nul
   }
 
   if (/weeks?/i.test(cleaned)) {
-    return amount * config.dailyCapacityHours * 5;
+    return amount * 7 * 24;
   }
 
   if (/day?s/i.test(cleaned)) {
-    return amount * config.dailyCapacityHours;
+    return amount * 24;
   }
 
   if (/hour?s/i.test(cleaned)) {
@@ -45,7 +44,7 @@ function parseDurationHours(value: string, config: PluginSettings): number | nul
   return null;
 }
 
-export function estimateIssueHours(issue: PlannerIssue, config: PluginSettings): number | null {
+export function estimateIssueHours(issue: PlannerIssue): number | null {
   const labels = (issue.labels?.filter((label) => !!label) as Array<string | PlannerLabel>) ?? [];
   const timeLabel = labels.map(labelName).find((value) => value.toLowerCase().startsWith("time:"));
 
@@ -54,7 +53,7 @@ export function estimateIssueHours(issue: PlannerIssue, config: PluginSettings):
   }
 
   const descriptor = timeLabel.split(":").slice(1).join(":").trim();
-  const parsed = parseDurationHours(descriptor, config);
+  const parsed = parseDurationHours(descriptor);
 
   if (parsed === null) {
     return null;

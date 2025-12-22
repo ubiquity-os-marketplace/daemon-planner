@@ -16,15 +16,13 @@ plugins:
         - ubiquity
         - ubiquity-os
         - ubiquity-os-marketplace
-      dailyCapacityHours: 6
-      planningHorizonDays: 5
-      reviewBufferHours: 2
+      assignedTaskLimit: 1
 ```
 
 ### Key Settings
 
 - `organizations`: Organisations to inspect when evaluating contributor workload. Defaults to `ubiquity`, `ubiquity-os`, `ubiquity-os-marketplace`.
-- `dailyCapacityHours`, `planningHorizonDays`, `reviewBufferHours`: Scheduling parameters that translate work queues into hours of focus time.
+- `assignedTaskLimit`: A candidate is considered available while they have fewer assigned tasks than this limit.
 - `defaultEstimateHours`: Fallback estimate when issue labels do not provide a duration.
 
 Candidates are sourced automatically from each configured organisation's collaborators. Workload calculations aggregate a contributor's open issues across all configured organisations.
