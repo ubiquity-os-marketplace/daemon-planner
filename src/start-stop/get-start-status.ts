@@ -1,5 +1,5 @@
 import { getUserId } from "../github/get-user-id";
-import { parseIssueUrl } from "../handlers/planner/get-assigned-issues";
+import { parseIssueUrl } from "../handlers/planner/parse-issue-url";
 import type { Context } from "../types/context";
 import type { operations as StartStopOperations } from "../types/generated/start-stop";
 
