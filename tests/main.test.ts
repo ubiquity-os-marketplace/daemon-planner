@@ -121,8 +121,9 @@ describe("Plugin tests", () => {
 
     await runPlugin(context);
 
-    const actions = (context as unknown as { runSummary: ReturnType<typeof createRunSummary> }).runSummary.actions.join("\n");
-    expect(actions).toContain("(30%)");
+    const summary = (context as unknown as { runSummary: ReturnType<typeof createRunSummary> }).runSummary;
+    const plans = summary.candidates.flatMap((entry) => entry.dryRunPlans ?? []).join("\n");
+    expect(plans).toContain("(30%)");
   });
 
   it("Should not assign users across organizations", async () => {
@@ -161,7 +162,7 @@ describe("Plugin tests", () => {
       title: "org-b task",
       assignees: [],
       assignee: null,
-      labels: [{ name: "Time: <1 Hour" }, { name: "Priority: 1 (Normal)" }],
+      labels: [{ name: "Time: <1 Hour" }, { name: "Priority: 1 (Normal)" }, { name: "Price: 1 USD" }],
       updated_at: new Date().toISOString(),
     });
 
@@ -206,9 +207,10 @@ describe("Plugin tests", () => {
 
     await runPlugin(context);
 
-    const actions = (context as unknown as { runSummary: ReturnType<typeof createRunSummary> }).runSummary.actions.join("\n");
-    expect(actions).toContain("(77%)");
-    expect(actions).not.toContain("(7700%)");
+    const summary = (context as unknown as { runSummary: ReturnType<typeof createRunSummary> }).runSummary;
+    const plans = summary.candidates.flatMap((entry) => entry.dryRunPlans ?? []).join("\n");
+    expect(plans).toContain("(77%)");
+    expect(plans).not.toContain("(7700%)");
   });
 });
 
