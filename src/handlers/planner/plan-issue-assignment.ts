@@ -91,7 +91,7 @@ export async function planIssueAssignment(
   }
 
   if (scores.length === 0) {
-    context.runSummary?.addAction(context.logger.warn(`Failed to calculate workloads for ${issueRef}`, { issueUrl, scoredCandidates }).logMessage.raw);
+    context.logger.info(`No candidate available for ${issueRef}`, { issueUrl, scoredCandidates });
     return null;
   }
 
