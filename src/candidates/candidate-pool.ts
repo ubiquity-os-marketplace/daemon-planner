@@ -101,7 +101,7 @@ export class CandidatePool {
   async getAvailableCandidates(org: string, issueUrl: string): Promise<RestEndpointMethodTypes["orgs"]["listMembers"]["response"]["data"]> {
     const byOrg = await this.getUsersByOrganization();
     const members = byOrg.get(org.trim()) ?? [];
-    const allowed = await Promise.all(members.map(async (login) => ((await this._isGloballyAvailable(login, issueUrl)) ? login : null)));
+    const allowed = await Promise.all(members.map(async (member) => ((await this._isGloballyAvailable(member, issueUrl)) ? member : null)));
     return allowed.filter((login) => Boolean(login)) as RestEndpointMethodTypes["orgs"]["listMembers"]["response"]["data"];
   }
 

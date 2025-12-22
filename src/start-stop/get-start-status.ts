@@ -1,13 +1,9 @@
 import { getUserId } from "../github/get-user-id";
+import { parseIssueUrl } from "../handlers/planner/get-assigned-issues";
 import type { Context } from "../types/context";
 import type { operations as StartStopOperations } from "../types/generated/start-stop";
 
 type StartStopContext = Pick<Context, "env" | "octokit" | "octokits" | "logger">;
-
-function parseIssueOwner(issueUrl: string): string | null {
-  const match = /^https:\/\/github\.com\/([^/]+)\/[^/]+\/issues\/\d+$/i.exec(issueUrl.trim());
-  return match?.[1] ?? null;
-}
 
 export async function getStartStatus(context: StartStopContext, username: string, issueUrl: string) {
   const userId = await getUserId(context.octokit, username);
@@ -15,7 +11,11 @@ export async function getStartStatus(context: StartStopContext, username: string
     throw new Error("Could not resolve GitHub user id");
   }
 
-  const owner = parseIssueOwner(issueUrl);
+  const urlParts = parseIssueUrl(issueUrl);
+  if (!urlParts) {
+    throw new Error("Could not parse issue owner");
+  }
+  const { owner } = urlParts;
   const orgOctokit = owner ? await context.octokits.get(owner) : context.octokit;
   const tokenInfo = (await orgOctokit.auth({ type: "installation" })) as { token: string };
 

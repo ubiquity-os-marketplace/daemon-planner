@@ -1,7 +1,7 @@
 import { getStartStatus } from "../../start-stop/get-start-status";
 import { PlannerContext } from "./types";
 
-function parseIssueUrl(url: string): { owner: string; repo: string; issue_number: number } | null {
+export function parseIssueUrl(url: string): { owner: string; repo: string; issue_number: number } | null {
   const match = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/issues\/(\d+)$/.exec(url);
   if (!match) {
     return null;

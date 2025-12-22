@@ -11,10 +11,7 @@ function labelName(label: PlannerLabel | string): string {
 }
 
 function parseDurationHours(value: string, config: PluginSettings): number | null {
-  const cleaned = value
-    .replace(/[<>]/g, String())
-    .replace(/about|approx\.?/gi, String())
-    .trim();
+  const cleaned = value.replace(/[<>]/g, String()).trim();
   const duration = ms(cleaned.toLowerCase());
 
   if (typeof duration === "number" && duration > 0) {
