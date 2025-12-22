@@ -30,6 +30,25 @@ function parsePriorityFromLabel(label: string): number | null {
   return value;
 }
 
+function parsePriceTagFromLabel(label: string): { amount: number; currency: string } | null {
+  const match = /^Price:\s*(\d+(?:\.\d+)?)\s+([a-z][a-z0-9_-]*)\s*$/i.exec(label.trim());
+  if (!match) {
+    return null;
+  }
+
+  const amount = Number(match[1]);
+  if (!Number.isFinite(amount)) {
+    return null;
+  }
+
+  const currency = match[2].trim();
+  if (!currency) {
+    return null;
+  }
+
+  return { amount, currency };
+}
+
 export class TaskPriorityPool {
   private readonly _context: Pick<Context, "octokit" | "octokits" | "config" | "logger" | "env">;
   private _cachedTasks: Promise<TaskRef[]> | null = null;
@@ -95,9 +114,13 @@ export class TaskPriorityPool {
     }
 
     const hasPriority = TaskPriorityPool._getIssuePriorityOrNull(issue) !== null;
+    const hasPriceTag = ((issue.labels?.filter((label) => !!label) as Array<string | PlannerLabel>) ?? []).some((label) => {
+      const parsed = parsePriceTagFromLabel(labelName(label));
+      return parsed !== null;
+    });
     const hasTime = estimateIssueHours(issue, this._context.config) !== null;
 
-    return hasPriority && hasTime;
+    return hasPriority && hasPriceTag && hasTime;
   }
 
   private async _listAccessibleRepositories(

@@ -58,7 +58,7 @@ export async function planIssueAssignment(
   }
 
   if (candidates.length === 0) {
-    context.runSummary?.addAction(context.logger.warn(`No candidates available for ${issueRef}`).logMessage.raw);
+    context.runSummary?.addAction(context.logger.warn(`No candidates available for ${issueUrl}`).logMessage.raw);
     return null;
   }
 

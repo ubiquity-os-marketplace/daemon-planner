@@ -81,15 +81,15 @@ describe("TaskPriorityPool", () => {
     );
 
     stub.issuesByRepo.set("org-a/repo-1", [
-      { number: 1, labels: [{ name: "Priority: 5 (High)" }, { name: "Time: <1 Hour" }] },
-      { number: 2, labels: [{ name: "Priority: 1 (Low)" }, { name: "Time: <1 Hour" }] },
+      { number: 1, labels: [{ name: "Priority: 5 (High)" }, { name: "Time: <1 Hour" }, { name: "Price: 100.5 USD" }] },
+      { number: 2, labels: [{ name: "Priority: 1 (Low)" }, { name: "Time: <1 Hour" }, { name: "Price: 1 USD" }] },
     ]);
     stub.issuesByRepo.set("org-a/repo-2", [
-      { number: 3, labels: [{ name: "Priority: 10 (Critical)" }, { name: "Time: <1 Hour" }] },
+      { number: 3, labels: [{ name: "Priority: 10 (Critical)" }, { name: "Time: <1 Hour" }, { name: "Price: 42 EUR" }] },
       { number: 99, labels: [{ name: "Time: <1 Hour" }] },
     ]);
     stub.issuesByRepo.set("org-b/repo-3", [
-      { number: 4, labels: [{ name: "Priority: 2 (Normal)" }, { name: "Time: <1 Hour" }] },
+      { number: 4, labels: [{ name: "Priority: 2 (Normal)" }, { name: "Time: <1 Hour" }, { name: "Price: 0.5 USD" }] },
       { number: 100, labels: [{ name: "Priority: 999 (Oops)" }] },
     ]);
 

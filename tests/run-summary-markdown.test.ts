@@ -15,7 +15,8 @@ describe("formatRunSummaryMarkdown", () => {
       { login: "alice", isAvailable: true, assignedIssueUrls: [] },
       { login: "bob", isAvailable: false, assignedIssueUrls: ["https://github.com/org-a/repo-1/issues/1"] },
     ]);
-    summary.addAction("Assigned org-a/repo-1#1 to alice");
+    summary.addCandidateDryRunPlan("alice", "Dry run: would assign org-a/repo-1#1 to alice (50%)");
+    summary.addAction("Selected 2 task(s), 1/2 candidate(s) available");
 
     const md = formatRunSummaryMarkdown(summary);
 
@@ -25,11 +26,14 @@ describe("formatRunSummaryMarkdown", () => {
     expect(md).toContain("- [org-a/repo-2#2](https://github.com/org-a/repo-2/issues/2)");
 
     expect(md).toContain("### Candidates");
-    expect(md).toContain("| Username | Availability | Assigned issues |");
-    expect(md).toContain("| @alice | 🟢 | None |");
-    expect(md).toContain("| @bob | 🔴 | [org-a/repo-1#1](https://github.com/org-a/repo-1/issues/1) |");
+    expect(md).toContain("| Username | Availability | Assigned issues | Dry run plan |");
+    expect(md).toContain("| @alice | 🟢 | None | Dry run: would assign org-a/repo-1#1 to alice (50%) |");
+    expect(md).toContain("| @bob | 🔴 | [org-a/repo-1#1](https://github.com/org-a/repo-1/issues/1) |  |");
 
     expect(md).toContain("### Actions");
-    expect(md).toContain("- Assigned org-a/repo-1#1 to alice");
+    expect(md).toContain("- Selected 2 task(s), 1/2 candidate(s) available");
+
+    const actionsSection = md.split("### Actions")[1] ?? "";
+    expect(actionsSection).not.toContain("Dry run: would assign org-a/repo-1#1 to alice (50%)");
   });
 });

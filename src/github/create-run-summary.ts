@@ -8,6 +8,7 @@ export type RunSummaryCandidate = {
   login: string;
   isAvailable: boolean;
   assignedIssueUrls: string[];
+  dryRunPlans?: string[];
 };
 
 export type RunSummary = {
@@ -16,6 +17,7 @@ export type RunSummary = {
   consideredTasks: RunSummaryTask[];
   candidates: RunSummaryCandidate[];
   addAction(action: string): void;
+  addCandidateDryRunPlan(login: string, message: string): void;
   setConsideredTasks(tasks: RunSummaryTask[]): void;
   setCandidates(candidates: RunSummaryCandidate[]): void;
 };
@@ -32,6 +34,24 @@ export function createRunSummary(dryRun: boolean): RunSummary {
     candidates,
     addAction(action: string) {
       actions.push(action);
+    },
+    addCandidateDryRunPlan(login: string, message: string) {
+      const normalized = login.trim();
+      if (!normalized) {
+        return;
+      }
+
+      let candidate = candidates.find((entry) => entry.login === normalized);
+      if (!candidate) {
+        candidate = { login: normalized, isAvailable: false, assignedIssueUrls: [], dryRunPlans: [] };
+        candidates.push(candidate);
+      }
+
+      if (!candidate.dryRunPlans) {
+        candidate.dryRunPlans = [];
+      }
+
+      candidate.dryRunPlans.push(message);
     },
     setConsideredTasks(tasks: RunSummaryTask[]) {
       consideredTasks.length = 0;

@@ -38,13 +38,25 @@ function formatCandidates(summary: RunSummary): string {
 
   const lines: string[] = [];
   lines.push(header);
-  lines.push("| Username | Availability | Assigned issues |");
-  lines.push("| --- | --- | --- |");
+
+  const shouldIncludeDryRunPlan = summary.dryRun;
+  if (shouldIncludeDryRunPlan) {
+    lines.push("| Username | Availability | Assigned issues | Dry run plan |");
+    lines.push("| --- | --- | --- | --- |");
+  } else {
+    lines.push("| Username | Availability | Assigned issues |");
+    lines.push("| --- | --- | --- |");
+  }
 
   for (const candidate of summary.candidates) {
     const availability = candidate.isAvailable ? "🟢" : "🔴";
     const assignedCell = candidate.assignedIssueUrls.length === 0 ? "None" : candidate.assignedIssueUrls.map((url) => issueLinkFromUrl(url)).join("<br>");
-    lines.push(`| @${candidate.login} | ${availability} | ${assignedCell} |`);
+    if (shouldIncludeDryRunPlan) {
+      const planCell = candidate.dryRunPlans && candidate.dryRunPlans.length > 0 ? candidate.dryRunPlans.join("<br>") : "";
+      lines.push(`| @${candidate.login} | ${availability} | ${assignedCell} | ${planCell} |`);
+    } else {
+      lines.push(`| @${candidate.login} | ${availability} | ${assignedCell} |`);
+    }
   }
 
   return `${lines.join("\n")}\n`;

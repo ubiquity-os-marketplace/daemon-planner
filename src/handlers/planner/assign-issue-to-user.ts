@@ -4,7 +4,7 @@ import { PlannerContext, PlannerIssue, RepositoryRef } from "./types";
 
 function formatMatchPercent(similarity?: number | null): string {
   if (similarity === null || similarity === undefined || !Number.isFinite(similarity)) {
-    return "";
+    return String();
   }
 
   const normalized = Math.min(1, Math.max(0, similarity > 1 ? similarity / 100 : similarity));
