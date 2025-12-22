@@ -58,7 +58,7 @@ export async function planIssueAssignment(
   }
 
   if (candidates.length === 0) {
-    context.logger.warn(`No candidates available for ${issueUrl}`);
+    context.logger.warn(`No candidates available for ${issueUrl}`, { issueUrl });
     return null;
   }
 
@@ -69,6 +69,8 @@ export async function planIssueAssignment(
     recommendationByLogin = new Map(recommendations.map((entry) => [entry.login, entry.maxSimilarity] as const));
     context.logger.debug("Using the current recommendation list for logins", {
       recommendationByLogin,
+      issueUrl,
+      candidates,
     });
     const threshold = context.config.recommendationThreshold;
     const relevant = recommendations.filter((entry) => entry.maxSimilarity >= threshold).map((entry) => entry.login);
@@ -89,7 +91,7 @@ export async function planIssueAssignment(
   }
 
   if (scores.length === 0) {
-    context.runSummary?.addAction(context.logger.warn(`Failed to calculate workloads for ${issueRef}`, { issueUrl }).logMessage.raw);
+    context.runSummary?.addAction(context.logger.warn(`Failed to calculate workloads for ${issueRef}`, { issueUrl, scoredCandidates }).logMessage.raw);
     return null;
   }
 

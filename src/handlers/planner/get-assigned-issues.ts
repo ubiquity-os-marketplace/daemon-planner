@@ -1,5 +1,5 @@
 import { getStartStatus } from "../../start-stop/get-start-status";
-import { PlannerContext, PlannerIssue } from "./types";
+import { PlannerContext } from "./types";
 
 function parseIssueUrl(url: string): { owner: string; repo: string; issue_number: number } | null {
   const match = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/issues\/(\d+)$/.exec(url);
@@ -10,7 +10,7 @@ function parseIssueUrl(url: string): { owner: string; repo: string; issue_number
   return { owner: match[1], repo: match[2], issue_number: Number(match[3]) };
 }
 
-export async function getAssignedIssues(context: PlannerContext, login: string, issueUrl: string): Promise<PlannerIssue[]> {
+export async function getAssignedIssues(context: PlannerContext, login: string, issueUrl: string) {
   const payload = await getStartStatus(context, login, issueUrl);
 
   if (!payload) {
@@ -27,9 +27,9 @@ export async function getAssignedIssues(context: PlannerContext, login: string, 
       }
 
       const response = await context.octokit.rest.issues.get(parsed);
-      return response.data as unknown as PlannerIssue;
+      return response.data;
     })
   );
 
-  return issues.filter((issue): issue is PlannerIssue => Boolean(issue));
+  return issues.filter((issue) => !!issue) as Array<NonNullable<(typeof issues)[number]>>;
 }
