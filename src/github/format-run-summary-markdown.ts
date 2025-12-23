@@ -52,7 +52,7 @@ function formatCandidates(summary: RunSummary): string {
     const availability = candidate.isAvailable ? "🟢" : "🔴";
     const assignedCell = candidate.assignedIssueUrls.length === 0 ? "None" : candidate.assignedIssueUrls.map((url) => issueLinkFromUrl(url)).join("<br>");
     if (shouldIncludeDryRunPlan) {
-      const planCell = candidate.dryRunPlans && candidate.dryRunPlans.length > 0 ? candidate.dryRunPlans.join("<br>") : "";
+      const planCell = candidate.assignPlans && candidate.assignPlans.length > 0 ? candidate.assignPlans.join("<br>") : "";
       lines.push(`| @${candidate.login} | ${availability} | ${assignedCell} | ${planCell} |`);
     } else {
       lines.push(`| @${candidate.login} | ${availability} | ${assignedCell} |`);

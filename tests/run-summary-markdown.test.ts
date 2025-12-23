@@ -15,7 +15,7 @@ describe("formatRunSummaryMarkdown", () => {
       { login: "alice", isAvailable: true, assignedIssueUrls: [] },
       { login: "bob", isAvailable: false, assignedIssueUrls: ["https://github.com/org-a/repo-1/issues/1"] },
     ]);
-    summary.addCandidateDryRunPlan("alice", "https://github.com/org-a/repo-1/issues/1 (50%)");
+    summary.addCandidateAssignPlan("alice", "https://github.com/org-a/repo-1/issues/1 (50%)");
     summary.addAction("Selected 2 task(s), 1/2 candidate(s) available");
 
     const md = formatRunSummaryMarkdown(summary);

@@ -122,7 +122,7 @@ describe("Plugin tests", () => {
     await runPlugin(context);
 
     const summary = (context as unknown as { runSummary: ReturnType<typeof createRunSummary> }).runSummary;
-    const plans = summary.candidates.flatMap((entry) => entry.dryRunPlans ?? []).join("\n");
+    const plans = summary.candidates.flatMap((entry) => entry.assignPlans ?? []).join("\n");
     expect(plans).toContain("(30%)");
   });
 
@@ -208,7 +208,7 @@ describe("Plugin tests", () => {
     await runPlugin(context);
 
     const summary = (context as unknown as { runSummary: ReturnType<typeof createRunSummary> }).runSummary;
-    const plans = summary.candidates.flatMap((entry) => entry.dryRunPlans ?? []).join("\n");
+    const plans = summary.candidates.flatMap((entry) => entry.assignPlans ?? []).join("\n");
     expect(plans).toContain("(77%)");
     expect(plans).not.toContain("(7700%)");
   });

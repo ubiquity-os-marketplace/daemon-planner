@@ -29,7 +29,7 @@ export async function assignIssueToUser(
   if (context.config.dryRun) {
     const plan = `${issueUrl}${match}`;
     context.logger.info(`Dry run: would assign ${issueRef} to ${login}${match}`, { repository, issue: issue.number, chosen: login, matchSimilarity });
-    context.runSummary?.addCandidateDryRunPlan(login, plan);
+    context.runSummary?.addCandidateAssignPlan(login, plan);
     return true;
   }
 
@@ -55,12 +55,14 @@ export async function assignIssueToUser(
           response: response.status,
           status: response.statusText,
           url: issueUrl,
+          body,
         }).logMessage.raw
       );
       return false;
     }
 
-    context.runSummary?.addAction(
+    context.runSummary?.addCandidateAssignPlan(
+      login,
       context.logger.ok(`Assigned ${issueRef} to ${login}${match}`, {
         matchSimilarity,
         response: await response.json(),
