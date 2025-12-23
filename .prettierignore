@@ -1,3 +1,4 @@
 tests/__mocks__/*
 dist
 CHANGELOG.md
+src/types/generated

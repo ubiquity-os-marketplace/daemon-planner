@@ -3,14 +3,6 @@ import issueTemplate from "./issue-template";
 import { STRINGS } from "./strings";
 import usersGet from "./users-get.json";
 
-/**
- * Helper function to setup tests.
- *
- * This function populates the mock database with the external API
- * data you'd expect to find in a real-world scenario.
- *
- * Here is where you create issues, commits, pull requests, etc.
- */
 export async function setupTests() {
   for (const item of usersGet) {
     db.users.create(item);
@@ -18,57 +10,72 @@ export async function setupTests() {
 
   db.repo.create({
     id: 1,
+    html_url: String(),
     name: STRINGS.TEST_REPO,
     owner: {
       login: STRINGS.USER_1,
       id: 1,
     },
     issues: [],
+    archived: false,
+    private: false,
+    labels: [],
+  });
+
+  db.repo.create({
+    id: 2,
+    html_url: String(),
+    name: STRINGS.TEST_REPO,
+    owner: {
+      login: "ubiquity-os",
+      id: 2,
+    },
+    issues: [],
+    archived: false,
+    private: false,
+    labels: [],
   });
 
   db.issue.create({
     ...issueTemplate,
+    updated_at: new Date().toISOString(),
   });
 
   db.issue.create({
     ...issueTemplate,
     id: 2,
     number: 2,
-    labels: [],
+    labels: [
+      {
+        name: "Time: <4 Hours",
+      },
+      {
+        name: "Priority: 1 (Normal)",
+      },
+    ],
+    assignees: [],
+    updated_at: new Date().toISOString(),
   });
 
-  createComment("/Hello", 1);
-}
-
-export function createComment(comment: string, commentId: number) {
-  const isComment = db.issueComments.findFirst({
-    where: {
-      id: {
-        equals: commentId,
+  db.issue.create({
+    ...issueTemplate,
+    id: 3,
+    number: 3,
+    owner: "ubiquity-os",
+    assignees: [
+      {
+        login: "user1",
       },
+    ],
+    assignee: {
+      ...(issueTemplate.assignee as { [key: string]: unknown }),
+      login: "user1",
     },
+    labels: [
+      {
+        name: "Time: 1 Day",
+      },
+    ],
+    updated_at: new Date().toISOString(),
   });
-
-  if (isComment) {
-    db.issueComments.update({
-      where: {
-        id: {
-          equals: commentId,
-        },
-      },
-      data: {
-        body: comment,
-      },
-    });
-  } else {
-    db.issueComments.create({
-      id: commentId,
-      body: comment,
-      issue_number: 1,
-      user: {
-        login: STRINGS.USER_1,
-        id: 1,
-      },
-    });
-  }
 }

@@ -24,6 +24,7 @@ export default {
   url: "",
   user: null,
   repo: "test-repo",
+  assignees: [],
   labels: [
     {
       name: "Price: 25 USD",

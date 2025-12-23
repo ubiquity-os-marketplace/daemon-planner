@@ -5,14 +5,183 @@ import issueTemplate from "./issue-template";
  * Intercepts the routes and returns a custom payload
  */
 export const handlers = [
+  http.get("https://api.github.com/orgs/:org/installation", ({ params: { org } }: { params: { org: string } }) => {
+    const id = Array.from(org).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+    return HttpResponse.json({ id });
+  }),
+  http.get("https://api.github.com/orgs/:org/members", () => HttpResponse.json(db.users.getAll())),
+  http.get("https://api.github.com/installation/repositories", () =>
+    HttpResponse.json({ total_count: db.repo.getAll().length, repositories: db.repo.getAll() })
+  ),
+  http.post("https://text-vector-embeddings-mai.deno.dev", async ({ request }) => {
+    const body = await request.json();
+    const candidates = Array.isArray((body as { candidates?: unknown }).candidates) ? (body as { candidates?: unknown }).candidates : [];
+    return HttpResponse.json({ candidates });
+  }),
+  http.get("https://text-vector-embeddings-mai.deno.dev/recommendations", ({ request }) => {
+    const url = new URL(request.url);
+    const issueUrl = url.searchParams.get("issueUrls") ?? "https://github.com/ubiquity/test-repo/issues/1";
+
+    return HttpResponse.json({
+      [issueUrl]: {
+        matchResultArray: {},
+        similarIssues: [],
+        sortedContributors: [
+          { login: "user1", matches: [], maxSimilarity: 0.9 },
+          { login: "user2", matches: [], maxSimilarity: 0.3 },
+        ],
+      },
+    });
+  }),
+  http.get("https://command-start-stop-main.deno.dev/start", ({ request }) => {
+    const url = new URL(request.url);
+    const userId = url.searchParams.get("userId");
+    const issueUrl = url.searchParams.get("issueUrl");
+
+    if (!userId || !issueUrl) {
+      return new HttpResponse(null, { status: 400 });
+    }
+
+    const numericId = Number(userId);
+    const login = Number.isFinite(numericId) ? db.users.findFirst({ where: { id: { equals: numericId } } })?.login ?? userId : userId;
+
+    const assigned = db.issue
+      .findMany({ where: { state: { equals: "open" } } })
+      .filter((issue) => {
+        const list = (issue.assignees as { login: string }[] | undefined) ?? [];
+        return list.some((entry) => entry.login === login);
+      })
+      .map((issue) => ({ title: issue.title as string, html_url: issue.html_url as string }));
+
+    return HttpResponse.json({
+      ok: true,
+      computed: {
+        assignedIssues: assigned,
+      },
+    });
+  }),
+  http.post("https://command-start-stop-main.deno.dev/start", async ({ request }) => {
+    const body = (await request.json()) as {
+      issueUrl?: string;
+      userId?: string;
+    };
+
+    const issueUrl = body.issueUrl;
+    const userId = body.userId;
+
+    if (!issueUrl || !userId) {
+      return new HttpResponse(null, { status: 400 });
+    }
+
+    const numericId = Number(userId);
+    const login = Number.isFinite(numericId) ? db.users.findFirst({ where: { id: { equals: numericId } } })?.login ?? userId : userId;
+
+    const match = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/issues\/(\d+)$/.exec(issueUrl);
+    if (!match) {
+      return new HttpResponse(null, { status: 400 });
+    }
+
+    const owner = match[1];
+    const repo = match[2];
+    const issueNumber = Number(match[3]);
+
+    const issue = db.issue.findFirst({
+      where: {
+        owner: { equals: owner },
+        repo: { equals: repo },
+        number: { equals: issueNumber },
+      },
+    });
+
+    if (!issue) {
+      return new HttpResponse(null, { status: 404 });
+    }
+
+    const existing = (issue.assignees as { login: string }[] | undefined) ?? [];
+    const next = Array.from(new Set([...existing.map((entry) => entry.login), login])).map((login) => ({ login }));
+
+    db.issue.update({
+      where: {
+        id: {
+          equals: issue.id as number,
+        },
+      },
+      data: {
+        ...issue,
+        assignees: next,
+        assignee: next[0] ?? null,
+      },
+    });
+
+    return HttpResponse.json({
+      ok: true,
+      content: "",
+      metadata: {
+        deadline: null,
+        isTaskStale: false,
+        wallet: "",
+        toAssign: next.map((entry) => entry.login),
+        senderRole: "",
+        consideredCount: next.length,
+        assignedIssues: [],
+      },
+    });
+  }),
   // get org repos
   http.get("https://api.github.com/orgs/:org/repos", ({ params: { org } }: { params: { org: string } }) =>
     HttpResponse.json(db.repo.findMany({ where: { owner: { login: { equals: org } } } }))
   ),
+  // get org issues
+  http.get("https://api.github.com/orgs/:org/issues", ({ params: { org }, request }) => {
+    const url = new URL(request.url);
+    const assignee = url.searchParams.get("assignee");
+    const state = url.searchParams.get("state") ?? "open";
+
+    const collection = db.issue
+      .findMany({ where: { owner: { equals: org as string } } })
+      .filter((issue) => {
+        if (state && issue.state !== state) {
+          return false;
+        }
+
+        if (!assignee) {
+          return true;
+        }
+
+        const list = (issue.assignees as { login: string }[] | undefined) ?? [];
+        return list.some((entry) => entry.login === assignee);
+      });
+
+    return HttpResponse.json(collection);
+  }),
   // get org repo issues
-  http.get("https://api.github.com/repos/:owner/:repo/issues", ({ params: { owner, repo } }) =>
-    HttpResponse.json(db.issue.findMany({ where: { owner: { equals: owner as string }, repo: { equals: repo as string } } }))
-  ),
+  http.get("https://api.github.com/repos/:owner/:repo/issues", ({ params: { owner, repo }, request }) => {
+    const url = new URL(request.url);
+    const assignee = url.searchParams.get("assignee");
+    const state = url.searchParams.get("state") ?? "open";
+
+    const list = db.issue
+      .findMany({ where: { owner: { equals: owner as string }, repo: { equals: repo as string } } })
+      .filter((issue) => {
+        if (state && issue.state !== state) {
+          return false;
+        }
+
+        if (assignee === "none") {
+          const assignees = (issue.assignees as { login: string }[] | undefined) ?? [];
+          return assignees.length === 0;
+        }
+
+        if (!assignee) {
+          return true;
+        }
+
+        const assignees = (issue.assignees as { login: string }[] | undefined) ?? [];
+        return assignees.some((item) => item.login === assignee);
+      });
+
+    return HttpResponse.json(list);
+  }),
   // get issue
   http.get("https://api.github.com/repos/:owner/:repo/issues/:issue_number", ({ params: { owner, repo, issue_number: issueNumber } }) =>
     HttpResponse.json(
@@ -37,6 +206,78 @@ export const handlers = [
     const newItem = { ...issueTemplate, id };
     db.issue.create(newItem);
     return HttpResponse.json(newItem);
+  }),
+  // add assignees
+  http.post("https://api.github.com/repos/:owner/:repo/issues/:issue_number/assignees", async ({ params: { owner, repo, issue_number: issueNumber }, request }) => {
+    const body = await getValue(request.body);
+    const assignees = Array.isArray(body?.assignees) ? body.assignees : [];
+    const issue = db.issue.findFirst({
+      where: {
+        owner: { equals: owner as string },
+        repo: { equals: repo as string },
+        number: { equals: Number(issueNumber) },
+      },
+    });
+
+    if (!issue) {
+      return new HttpResponse(null, { status: 404 });
+    }
+
+    const existing = (issue.assignees as { login: string }[] | undefined) ?? [];
+    const next = Array.from(new Set([...existing.map((entry) => entry.login), ...assignees]))
+      .map((login) => ({ login }));
+
+    const updated = {
+      ...issue,
+      assignee: next[0] ?? null,
+      assignees: next,
+    };
+
+    db.issue.update({
+      where: {
+        id: {
+          equals: issue.id as number,
+        },
+      },
+      data: updated,
+    });
+
+    return HttpResponse.json(updated);
+  }),
+  // remove assignees
+  http.delete("https://api.github.com/repos/:owner/:repo/issues/:issue_number/assignees", async ({ params: { owner, repo, issue_number: issueNumber }, request }) => {
+    const body = await getValue(request.body);
+    const assignees = Array.isArray(body?.assignees) ? body.assignees : [];
+    const issue = db.issue.findFirst({
+      where: {
+        owner: { equals: owner as string },
+        repo: { equals: repo as string },
+        number: { equals: Number(issueNumber) },
+      },
+    });
+
+    if (!issue) {
+      return new HttpResponse(null, { status: 404 });
+    }
+
+    const remaining = ((issue.assignees as { login: string }[] | undefined) ?? []).filter((entry) => !assignees.includes(entry.login));
+
+    const updated = {
+      ...issue,
+      assignee: remaining[0] ?? null,
+      assignees: remaining,
+    };
+
+    db.issue.update({
+      where: {
+        id: {
+          equals: issue.id as number,
+        },
+      },
+      data: updated,
+    });
+
+    return HttpResponse.json(updated);
   }),
   // create comment
   http.post("https://api.github.com/repos/:owner/:repo/issues/:issue_number/comments", async ({ params: { issue_number: issueNumber }, request }) => {

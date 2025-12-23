@@ -19,3 +19,5 @@ jobs:
         env:
           APP_ID: ${{ secrets.APP_ID }}
           APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+          MATCHMAKING_ENDPOINT: ${{ vars.MATCHMAKING_ENDPOINT }}
+          START_STOP_ENDPOINT: ${{ vars.START_STOP_ENDPOINT }}
