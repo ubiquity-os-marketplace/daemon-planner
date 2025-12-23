@@ -10,7 +10,7 @@ Add the plugin to your `.ubiquibot-config.yml` and customise as needed. Sensible
 
 ```yml
 plugins:
-  https://your-worker-url:
+  ubiquity-os-marketplace/daemon-planner:
     with:
       organizations:
         - ubiquity

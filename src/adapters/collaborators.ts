@@ -2,7 +2,7 @@ import { RestEndpointMethodTypes } from "@ubiquity-os/plugin-sdk/octokit";
 import type { Context } from "../types/context";
 
 export async function fetchOrganizationCollaborators(
-  context: Pick<Context, "octokits" | "octokit" | "logger" | "env">,
+  context: Pick<Context, "octokits" | "logger">,
   org: string
 ): Promise<RestEndpointMethodTypes["orgs"]["listMembers"]["response"]["data"]> {
   try {
