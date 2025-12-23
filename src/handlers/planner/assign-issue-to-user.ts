@@ -65,9 +65,10 @@ export async function assignIssueToUser(
 
     context.runSummary?.addCandidateAssignPlan(
       login,
-      context.logger.ok(`Assigned ${issueRef} to ${login}${match}`, {
+      context.logger.ok(`${issueUrl}${match}`, {
         matchSimilarity,
         response: responseJson,
+        action: "assigned",
       }).logMessage.raw
     );
     return true;

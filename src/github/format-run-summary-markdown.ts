@@ -39,24 +39,14 @@ function formatCandidates(summary: RunSummary): string {
   const lines: string[] = [];
   lines.push(header);
 
-  const shouldIncludeDryRunPlan = summary.dryRun;
-  if (shouldIncludeDryRunPlan) {
-    lines.push("| Username | Availability | Assigned issues | Assignment Plan |");
-    lines.push("| --- | --- | --- | --- |");
-  } else {
-    lines.push("| Username | Availability | Assigned issues |");
-    lines.push("| --- | --- | --- |");
-  }
+  lines.push("| Username | Availability | Assigned issues | Assignment Plan |");
+  lines.push("| --- | --- | --- | --- |");
 
   for (const candidate of summary.candidates) {
     const availability = candidate.isAvailable ? "🟢" : "🔴";
     const assignedCell = candidate.assignedIssueUrls.length === 0 ? "None" : candidate.assignedIssueUrls.map((url) => issueLinkFromUrl(url)).join("<br>");
-    if (shouldIncludeDryRunPlan) {
-      const planCell = candidate.assignPlans && candidate.assignPlans.length > 0 ? candidate.assignPlans.join("<br>") : "";
-      lines.push(`| @${candidate.login} | ${availability} | ${assignedCell} | ${planCell} |`);
-    } else {
-      lines.push(`| @${candidate.login} | ${availability} | ${assignedCell} |`);
-    }
+    const planCell = candidate.assignPlans && candidate.assignPlans.length > 0 ? candidate.assignPlans.join("<br>") : "";
+    lines.push(`| @${candidate.login} | ${availability} | ${assignedCell} | ${planCell} |`);
   }
 
   return `${lines.join("\n")}\n`;
