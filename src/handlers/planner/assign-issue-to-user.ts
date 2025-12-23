@@ -25,6 +25,7 @@ export async function assignIssueToUser(
   const issueUrl = `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`;
   const issueRef = `${repository.owner}/${repository.name}#${issue.number}`;
   const match = formatMatchPercent(matchSimilarity);
+  const octokit = await context.octokits.get(repository.owner);
 
   if (context.config.dryRun) {
     const plan = `${issueUrl}${match}`;
@@ -35,11 +36,11 @@ export async function assignIssueToUser(
 
   const body: NonNullable<operations["postStart"]["requestBody"]>["content"]["application/json"] = {
     issueUrl,
-    userId: await getUserId(context.octokit, login),
+    userId: await getUserId(octokit, login),
   };
 
   try {
-    const tokenInfo = (await context.octokit.auth({ type: "installation" })) as { token: string };
+    const tokenInfo = (await octokit.auth({ type: "installation" })) as { token: string };
     const response = await fetch(`${context.env.START_STOP_ENDPOINT}/start`, {
       method: "POST",
       headers: {
