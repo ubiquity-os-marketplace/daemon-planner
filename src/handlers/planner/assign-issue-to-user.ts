@@ -48,14 +48,16 @@ export async function assignIssueToUser(
       },
       body: JSON.stringify(body),
     });
+    const responseJson = (await response.json()) as operations["postStart"]["responses"]["200"]["content"]["application/json"];
 
-    if (!response.ok) {
+    if (!response.ok || !responseJson.ok) {
       context.runSummary?.addAction(
         context.logger.warn(`Failed to assign ${issueRef} to ${login} (${response.status} ${response.statusText})`, {
           response: response.status,
           status: response.statusText,
           url: issueUrl,
           body,
+          responseJson,
         }).logMessage.raw
       );
       return false;
@@ -65,7 +67,7 @@ export async function assignIssueToUser(
       login,
       context.logger.ok(`Assigned ${issueRef} to ${login}${match}`, {
         matchSimilarity,
-        response: await response.json(),
+        response: responseJson,
       }).logMessage.raw
     );
     return true;
