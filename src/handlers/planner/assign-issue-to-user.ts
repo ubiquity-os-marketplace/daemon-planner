@@ -52,7 +52,7 @@ export async function assignIssueToUser(
 
     if (!response.ok || !responseJson.ok) {
       context.runSummary?.addAction(
-        context.logger.warn(`Failed to assign ${issueRef} to ${login} (${response.status} ${response.statusText})`, {
+        context.logger.warn(`Failed to assign ${issueRef} to ${login} (${responseJson.reasons?.join(", ")})`, {
           response: response.status,
           status: response.statusText,
           url: issueUrl,
