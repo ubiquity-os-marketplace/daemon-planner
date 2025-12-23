@@ -70,7 +70,7 @@ export async function planIssueAssignment(
   let scoredCandidates: typeof candidates = candidates;
   let recommendationByLogin: ReadonlyMap<string, number> = new Map();
   try {
-    const recommendations = await getRecommendedContributors(context.env.MATCHMAKING_ENDPOINT, issueUrl, candidates);
+    const recommendations = await getRecommendedContributors(context, issueUrl, candidates);
     recommendationByLogin = new Map(recommendations.map((entry) => [entry.login, normalizeSimilarity(entry.maxSimilarity)] as const));
     context.logger.debug("Using the current recommendation list for logins", {
       recommendationByLogin,
