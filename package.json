@@ -1,7 +1,7 @@
 {
-  "name": "plugin-template",
+  "name": "@ubiquity-os/daemon-planner",
   "version": "1.0.0",
-  "description": "Ubiquibot plugin template repository with TypeScript support.",
+  "description": "Planning daemon plugin.",
   "author": "Ubiquity DAO",
   "license": "MIT",
   "main": "src/worker.ts",
@@ -34,7 +34,7 @@
     "open-source"
   ],
   "dependencies": {
-    "@sinclair/typebox": "0.34.41",
+    "@sinclair/typebox": "^0.33.17",
     "@ubiquity-os/plugin-sdk": "^3.7.0",
     "@ubiquity-os/ubiquity-os-logger": "^1.4.0",
     "dotenv": "17.2.3",

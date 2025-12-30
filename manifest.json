@@ -1,6 +1,6 @@
 {
-  "name": "ts-template",
-  "description": "ts-template for UbiquityOS plugins.",
+  "name": "Daemon Planner",
+  "description": "Planning daemon plugin.",
   "commands": {
     "hello": {
       "ubiquity:example": "/hello argument",
