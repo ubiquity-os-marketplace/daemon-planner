@@ -25,12 +25,12 @@ export async function helloWorld(context: Context) {
   const body = payload.comment.body;
 
   if (!RegExp(/^\/hello/i).exec(body)) {
-    logger.error(`Invalid use of slash command, use "/hello".`, { body });
+    logger.warn(`Invalid use of slash command, use "/hello".`, { body });
     return;
   }
 
   logger.info("Hello, world!");
-  logger.debug(`Executing helloWorld:`, { sender, repo, issueNumber, owner });
+  logger.info(`Executing helloWorld:`, { sender, repo, issueNumber, owner });
 
   await commentHandler.postComment(context, logger.ok(configurableResponse));
   if (customStringsUrl) {
