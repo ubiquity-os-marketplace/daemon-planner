@@ -4,7 +4,6 @@
  */
 const placeholderDate = new Date().toISOString();
 const placeholderUrl = "https://example.com";
-const placeholder = "placeholder";
 
 export default {
   author_association: "NONE",
@@ -41,27 +40,5 @@ export default {
     },
   ],
   body: "body",
-  assignee: {
-    login: placeholder,
-    avatar_url: `${placeholderUrl}/avatar`,
-    email: "assignee@example.com",
-    events_url: `${placeholderUrl}/events`,
-    followers_url: `${placeholderUrl}/followers`,
-    following_url: `${placeholderUrl}/following`,
-    gists_url: `${placeholderUrl}/gists`,
-    gravatar_id: null,
-    html_url: placeholderUrl,
-    id: 1,
-    name: "Assignee",
-    node_id: "node-id",
-    organizations_url: `${placeholderUrl}/orgs`,
-    received_events_url: `${placeholderUrl}/received-events`,
-    repos_url: `${placeholderUrl}/repos`,
-    site_admin: false,
-    starred_at: placeholderDate,
-    starred_url: `${placeholderUrl}/stars`,
-    subscriptions_url: `${placeholderUrl}/subscriptions`,
-    type: "User",
-    url: placeholderUrl,
-  },
+  assignee: null,
 };

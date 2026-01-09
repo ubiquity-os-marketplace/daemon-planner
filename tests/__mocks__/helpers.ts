@@ -68,7 +68,6 @@ export async function setupTests() {
       },
     ],
     assignee: {
-      ...(issueTemplate.assignee as { [key: string]: unknown }),
       login: "user1",
     },
     labels: [
