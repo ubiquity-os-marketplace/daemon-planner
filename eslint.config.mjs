@@ -10,7 +10,7 @@ export default defineConfig(
   eslint.configs.recommended,
   tsEslint.configs.recommended,
   sonarjs.configs.recommended,
-  { ignores: [".github/knip.ts", "dist/", ".wrangler/**", "coverage/**"] },
+  { ignores: [".github/knip.ts", "dist/", ".wrangler/**", "coverage/**", "src/types/generated"] },
   {
     plugins: {
       "@typescript-eslint": tsEslint.plugin,

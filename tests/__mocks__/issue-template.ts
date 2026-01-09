@@ -28,6 +28,7 @@ export default {
   url: `${placeholderUrl}/issues/1`,
   user: null,
   repo: "test-repo",
+  assignees: [],
   labels: [
     {
       name: "Price: 25 USD",

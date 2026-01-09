@@ -4,6 +4,10 @@ on:
   push:
   pull_request:
 
+env:
+  MATCHMAKING_ENDPOINT: ${{ vars.MATCHMAKING_ENDPOINT }}
+  START_STOP_ENDPOINT: ${{ vars.START_STOP_ENDPOINT }}
+
 jobs:
   spellcheck:
     name: Check for formatting errors

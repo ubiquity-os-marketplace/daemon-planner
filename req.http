@@ -1,0 +1,17 @@
+@baseUrl = http://localhost:4000
+@ref = https://github.com/Meniole/daemon-planner
+
+### Invoke plugin (issues.opened)
+POST {{baseUrl}}/
+Content-Type: application/json
+
+{
+  "stateId": "local-state-id",
+  "eventName": "issues.opened",
+  "eventPayload": "GyQBAIzTFfOihHUPAVhX6svHlsknU4elb90B6/dvBzr9LYoefqstDKNAAwwDT90WHsRkEJnb91dB+dol6DFhKHwBnDTQELfqftnh16ZhWm7zvc0e5n8535fbO74N11t4GU7HmLTGqehur2RFHqeshhg53He7f/DhutyOl7eIrtkPuNmke/CcTMvgd586TRa5cTjFxPFYetJ/zNkAc17qAQ==",
+  "command": "null",
+  "authToken": "{{authToken}}",
+  "settings": "{}",
+  "ref": "{{ref}}",
+  "signature": "local"
+}
