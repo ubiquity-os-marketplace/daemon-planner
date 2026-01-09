@@ -1,0 +1,85 @@
+import { getUserId } from "../../github/get-user-id";
+import { operations } from "../../types/generated/start-stop";
+import { PlannerContext, PlannerIssue, RepositoryRef } from "./types";
+
+function formatMatchPercent(similarity?: number | null): string {
+  if (similarity === null || similarity === undefined || !Number.isFinite(similarity)) {
+    return String();
+  }
+
+  const normalized = Math.min(1, Math.max(0, similarity > 1 ? similarity / 100 : similarity));
+  return ` (${Math.round(normalized * 100)}%)`;
+}
+
+export async function assignIssueToUser(
+  context: PlannerContext,
+  repository: RepositoryRef,
+  issue: PlannerIssue,
+  login: string,
+  matchSimilarity?: number | null
+): Promise<boolean> {
+  if (!issue?.number) {
+    return false;
+  }
+
+  const issueUrl = `https://github.com/${repository.owner}/${repository.name}/issues/${issue.number}`;
+  const issueRef = `${repository.owner}/${repository.name}#${issue.number}`;
+  const match = formatMatchPercent(matchSimilarity);
+  const octokit = await context.octokits.get(repository.owner);
+
+  if (context.config.dryRun) {
+    const plan = `${issueUrl}${match}`;
+    context.logger.info(`Dry run: would assign ${issueRef} to ${login}${match}`, { repository, issue: issue.number, chosen: login, matchSimilarity });
+    context.runSummary?.addCandidateAssignPlan(login, plan);
+    return true;
+  }
+
+  const body: NonNullable<operations["postStart"]["requestBody"]>["content"]["application/json"] = {
+    issueUrl,
+    userId: await getUserId(octokit, login),
+  };
+
+  try {
+    const tokenInfo = (await octokit.auth({ type: "installation" })) as { token: string };
+    const response = await fetch(`${context.env.START_STOP_ENDPOINT}/start`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${tokenInfo.token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const responseJson = (await response.json()) as operations["postStart"]["responses"]["200"]["content"]["application/json"];
+
+    if (!response.ok || !responseJson.ok) {
+      context.runSummary?.addAction(
+        context.logger.warn(`Failed to assign ${issueRef} to ${login} (${responseJson.reasons?.join(", ")})`, {
+          response: response.status,
+          status: response.statusText,
+          url: issueUrl,
+          body,
+          responseJson,
+        }).logMessage.raw
+      );
+      return false;
+    }
+
+    context.runSummary?.addCandidateAssignPlan(
+      login,
+      context.logger.ok(`${issueUrl}${match}`, {
+        matchSimilarity,
+        response: responseJson,
+        action: "assigned",
+      }).logMessage.raw
+    );
+    return true;
+  } catch (err) {
+    context.runSummary?.addAction(
+      context.logger.error(`Failed to assign ${issueRef} to ${login}`, {
+        err: String(err),
+        url: issueUrl,
+      }).logMessage.raw
+    );
+    return false;
+  }
+}

@@ -1,18 +1,34 @@
-import { createActionsPlugin } from "@ubiquity-os/plugin-sdk";
+import { createActionsPlugin, Options } from "@ubiquity-os/plugin-sdk";
 import { LOG_LEVEL, LogLevel } from "@ubiquity-os/ubiquity-os-logger";
+import { createRunSummary } from "./github/create-run-summary";
+import { formatRunSummaryMarkdown } from "./github/format-run-summary-markdown";
+import { writeGithubStepSummary } from "./github/write-github-step-summary";
 import { runPlugin } from "./index";
-import { Env, envSchema, PluginSettings, pluginSettingsSchema, SupportedEvents } from "./types";
+import { SupportedEvents } from "./types/context";
+import { Env, envSchema } from "./types/env";
+import { PluginSettings, pluginSettingsSchema } from "./types/plugin-input";
 
 export default createActionsPlugin<PluginSettings, Env, null, SupportedEvents>(
-  (context) => {
-    return runPlugin(context);
+  async (context) => {
+    const runSummary = createRunSummary(context.config.dryRun);
+    (context as { runSummary?: ReturnType<typeof createRunSummary> }).runSummary = runSummary;
+
+    try {
+      return await runPlugin(context);
+    } finally {
+      try {
+        await writeGithubStepSummary(formatRunSummaryMarkdown(runSummary));
+      } catch (err) {
+        context.logger.warn("Failed to write GitHub run summary", { err: String(err) });
+      }
+    }
   },
   {
     logLevel: (process.env.LOG_LEVEL as LogLevel) || LOG_LEVEL.INFO,
-    settingsSchema: pluginSettingsSchema,
-    envSchema: envSchema,
+    settingsSchema: pluginSettingsSchema as unknown as Options["settingsSchema"],
+    envSchema: envSchema as unknown as Options["envSchema"],
     ...(process.env.KERNEL_PUBLIC_KEY && { kernelPublicKey: process.env.KERNEL_PUBLIC_KEY }),
-    postCommentOnError: true,
+    postCommentOnError: false,
     bypassSignatureVerification: process.env.NODE_ENV === "local",
   }
 );
