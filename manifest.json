@@ -1,7 +1,9 @@
 {
   "name": "@ubiquity-os/daemon-planner",
-  "description": "Automated sprint planner that assigns GitHub issues based on contributor capacity.",
+  "short_name": "ubiquity-os-marketplace/daemon-planner@codex/fix/manifest-build",
+  "description": "Automates GitHub issue assignment across organizations based on contributor capacity.",
   "ubiquity:listeners": ["issues.opened", "issues.reopened", "issues.closed"],
+  "skipBotEvents": true,
   "configuration": {
     "default": {},
     "type": "object",
@@ -34,6 +36,5 @@
         "type": "boolean"
       }
     }
-  },
-  "short_name": "ubiquity-os-marketplace/daemon-planner@codex/concurrent-20251222"
+  }
 }
