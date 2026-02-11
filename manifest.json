@@ -1,6 +1,6 @@
 {
   "name": "@ubiquity-os/daemon-planner",
-  "short_name": "ubiquity-os-marketplace/daemon-planner@codex/fix/manifest-build",
+  "short_name": "ubiquity-os-marketplace/daemon-planner@development",
   "description": "Automates GitHub issue assignment across organizations based on contributor capacity.",
   "ubiquity:listeners": ["issues.opened", "issues.reopened", "issues.closed"],
   "skipBotEvents": true,
