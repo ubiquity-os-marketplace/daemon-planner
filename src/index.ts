@@ -21,5 +21,5 @@ export async function runPlugin(baseContext: BaseContext) {
     await planAssignment(context);
     return;
   }
-  context.logger.info("Event not supported", { event: context.eventName });
+  context.logger.warn("Event not supported", { event: context.eventName });
 }
