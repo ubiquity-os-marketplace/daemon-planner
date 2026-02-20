@@ -1,4 +1,4 @@
-name: "the name of the plugin"
+name: "Daemon Planner"
 
 on:
   workflow_dispatch:
@@ -13,6 +13,11 @@ on:
         description: "Settings"
       authToken:
         description: "Auth Token"
+      ubiquityKernelToken:
+        description: "Kernel attestation token (optional)"
+      kernelPublicKey:
+        description: "Kernel public key PEM for signature verification (optional)"
+        required: false
       ref:
         description: "Ref"
       signature:
@@ -23,19 +28,21 @@ on:
 
 jobs:
   compute:
-    name: "plugin name"
+    name: "Daemon Planner"
     runs-on: ubuntu-latest
     permissions: write-all
     environment: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) && 'main' || 'development' }}
     env:
       PLUGIN_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      KERNEL_PUBLIC_KEY: ${{ secrets.KERNEL_PUBLIC_KEY }}
+      KERNEL_PUBLIC_KEY: ${{ (endsWith(github.actor, '[bot]') && github.event.inputs.kernelPublicKey) || secrets.KERNEL_PUBLIC_KEY }}
+      MATCHMAKING_ENDPOINT: ${{ vars.MATCHMAKING_ENDPOINT }}
+      START_STOP_ENDPOINT: ${{ vars.START_STOP_ENDPOINT }}
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
       LOG_LEVEL: ${{ secrets.LOG_LEVEL || 'info' }}
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
-      - name: execute directive
+      - name: ${{ github.event.repository.name }}
         run: node ./dist/index.js

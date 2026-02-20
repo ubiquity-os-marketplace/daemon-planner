@@ -1,24 +1,40 @@
 {
-  "name": "ts-template",
-  "description": "ts-template for UbiquityOS plugins.",
-  "commands": {
-    "hello": {
-      "ubiquity:example": "/hello argument",
-      "description": "Hello command with an argument."
-    }
-  },
+  "name": "@ubiquity-os/daemon-planner",
+  "short_name": "ubiquity-os-marketplace/daemon-planner@development",
+  "description": "Automates GitHub issue assignment across organizations based on contributor capacity.",
+  "ubiquity:listeners": ["issues.opened", "issues.reopened", "issues.closed"],
+  "skipBotEvents": true,
   "configuration": {
     "default": {},
     "type": "object",
     "properties": {
-      "configurableResponse": {
-        "default": "Hello, world!",
-        "type": "string"
+      "organizations": {
+        "default": ["ubiquity", "ubiquity-os", "ubiquity-os-marketplace"],
+        "minItems": 1,
+        "description": "List of GitHub organizations to process issues for.",
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
       },
-      "customStringsUrl": {
-        "type": "string"
+      "assignedTaskLimit": {
+        "default": 1,
+        "minimum": 1,
+        "description": "Maximum number of tasks that a user can be assigned to.",
+        "type": "number"
+      },
+      "recommendationThreshold": {
+        "default": 20,
+        "minimum": 0,
+        "maximum": 100,
+        "description": "Minimum matchmaking relevance score required for a user to be considered for assignment.",
+        "type": "number"
+      },
+      "dryRun": {
+        "default": false,
+        "description": "When enabled, planned actions are logged but no assignments are executed.",
+        "type": "boolean"
       }
     }
-  },
-  "short_name": "ubiquity-os-marketplace/daemon-planner@development"
+  }
 }

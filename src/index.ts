@@ -1,16 +1,25 @@
-import { helloWorld } from "./handlers/hello-world";
-import { Context } from "./types";
-import { isCommentEvent } from "./types/typeguards";
+import { createAdapters } from "./adapters/create-adapters";
+import { CandidatePool } from "./candidates/candidate-pool";
+import { OrgOctokitPool } from "./github/org-octokit-pool";
+import { planAssignment } from "./handlers/planner/plan-assignment";
+import { TaskPriorityPool } from "./tasks/task-priority-pool";
+import { BaseContext, Context } from "./types/context";
+import { isIssueClosedEvent, isIssueOpenedEvent, isIssueReopenedEvent } from "./types/typeguards";
 
-/**
- * The main plugin function. Split for easier testing.
- */
-export async function runPlugin(context: Context) {
-  const { logger, eventName } = context;
+export async function runPlugin(baseContext: BaseContext) {
+  const octokits = new OrgOctokitPool(baseContext);
+  const adapters = createAdapters({ ...baseContext, octokits } as Context);
+  const candidates = new CandidatePool({ ...baseContext, adapters, octokits } as Context);
+  const context = Object.assign(baseContext, {
+    adapters,
+    candidates,
+    octokits,
+    tasks: new TaskPriorityPool({ ...baseContext, octokits } as Context),
+  }) as Context;
 
-  if (isCommentEvent(context)) {
-    return await helloWorld(context);
+  if (isIssueOpenedEvent(context) || isIssueReopenedEvent(context) || isIssueClosedEvent(context)) {
+    await planAssignment(context);
+    return;
   }
-
-  logger.error(`Unsupported event: ${eventName}`);
+  context.logger.warn("Event not supported", { event: context.eventName });
 }
