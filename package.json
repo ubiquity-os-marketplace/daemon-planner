@@ -24,9 +24,10 @@
     "knip-ci": "knip --no-exit-code --reporter json --config .github/knip.ts",
     "test": "jest --setupFiles dotenv/config --coverage",
     "worker": "wrangler dev --env dev --port 4000",
-    "generate": "dotenv -- bun run generate:text-vector-embeddings && dotenv --  bun run generate:command-start-stop",
-    "generate:text-vector-embeddings": "bun x openapi-typescript ${MATCHMAKING_ENDPOINT:-https://text-vector-embeddings-mai.deno.dev}/openapi --output src/types/generated/matchmaking.ts || bun x openapi-typescript https://text-vector-embeddings-mai.deno.dev/openapi --output src/types/generated/matchmaking.ts",
-    "generate:command-start-stop": "bun x openapi-typescript ${START_STOP_ENDPOINT:-https://command-start-stop-main.deno.dev}/openapi --output src/types/generated/start-stop.ts || bun x openapi-typescript https://command-start-stop-main.deno.dev/openapi --output src/types/generated/start-stop.ts",
+    "generate": "dotenv -- npm run generate:openapi-types",
+    "generate:openapi-types": "mkdir -p src/types/generated && npm run generate:text-vector-embeddings && npm run generate:command-start-stop",
+    "generate:text-vector-embeddings": "npx --yes openapi-typescript \"${MATCHMAKING_ENDPOINT}/openapi\" --output src/types/generated/matchmaking.ts",
+    "generate:command-start-stop": "npx --yes openapi-typescript \"${START_STOP_ENDPOINT}/openapi\" --output src/types/generated/start-stop.ts",
     "prepare": "bun run prepare:manifest && bun run generate && husky",
     "prepare:manifest": "bunx @ubiquity-os/plugin-manifest-tool@latest",
     "prebuild": "bun run prepare:manifest"

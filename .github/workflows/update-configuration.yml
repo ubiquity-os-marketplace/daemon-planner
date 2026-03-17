@@ -121,10 +121,7 @@ jobs:
 
       - name: Generate OpenAPI types for deploy
         if: ${{ env.DEPLOY_DENO_ENABLED == 'true' && steps.refs.outputs.is_tag_ref != 'true' && steps.refs.outputs.is_artifact_ref != 'true' && github.event_name != 'delete' }}
-        run: |
-          mkdir -p src/types/generated
-          npx --yes openapi-typescript "${MATCHMAKING_ENDPOINT}/openapi" --output src/types/generated/matchmaking.ts
-          npx --yes openapi-typescript "${START_STOP_ENDPOINT}/openapi" --output src/types/generated/start-stop.ts
+        run: npm run generate:openapi-types
         env:
           MATCHMAKING_ENDPOINT: ${{ vars.MATCHMAKING_ENDPOINT }}
           START_STOP_ENDPOINT: ${{ vars.START_STOP_ENDPOINT }}
