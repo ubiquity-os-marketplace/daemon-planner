@@ -123,13 +123,11 @@ jobs:
         if: ${{ env.DEPLOY_DENO_ENABLED == 'true' && steps.refs.outputs.is_tag_ref != 'true' && steps.refs.outputs.is_artifact_ref != 'true' && github.event_name != 'delete' }}
         run: |
           mkdir -p src/types/generated
-          npx --yes openapi-typescript "${MATCHMAKING_ENDPOINT}/openapi" --output src/types/generated/matchmaking.ts || \
-            npx --yes openapi-typescript "https://text-vector-embeddings-mai.deno.dev/openapi" --output src/types/generated/matchmaking.ts
-          npx --yes openapi-typescript "${START_STOP_ENDPOINT}/openapi" --output src/types/generated/start-stop.ts || \
-            npx --yes openapi-typescript "https://command-start-stop-main.deno.dev/openapi" --output src/types/generated/start-stop.ts
+          npx --yes openapi-typescript "${MATCHMAKING_ENDPOINT}/openapi" --output src/types/generated/matchmaking.ts
+          npx --yes openapi-typescript "${START_STOP_ENDPOINT}/openapi" --output src/types/generated/start-stop.ts
         env:
-          MATCHMAKING_ENDPOINT: ${{ vars.MATCHMAKING_ENDPOINT || 'https://text-vector-embeddings-mai.deno.dev' }}
-          START_STOP_ENDPOINT: ${{ vars.START_STOP_ENDPOINT || 'https://command-start-stop-main.deno.dev' }}
+          MATCHMAKING_ENDPOINT: ${{ vars.MATCHMAKING_ENDPOINT }}
+          START_STOP_ENDPOINT: ${{ vars.START_STOP_ENDPOINT }}
 
       - name: Generate manifest for deploy
         if: ${{ env.DEPLOY_DENO_ENABLED == 'true' && steps.refs.outputs.is_tag_ref != 'true' && steps.refs.outputs.is_artifact_ref != 'true' && github.event_name != 'delete' }}
@@ -155,8 +153,8 @@ jobs:
           APP_INSTALLATION_ID: ${{ secrets.APP_INSTALLATION_ID }}
           ACTION_REF: ${{ env.ACTION_REF }}
           LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
-          MATCHMAKING_ENDPOINT: ${{ vars.MATCHMAKING_ENDPOINT || 'https://text-vector-embeddings-mai.deno.dev' }}
-          START_STOP_ENDPOINT: ${{ vars.START_STOP_ENDPOINT || 'https://command-start-stop-main.deno.dev' }}
+          MATCHMAKING_ENDPOINT: ${{ vars.MATCHMAKING_ENDPOINT }}
+          START_STOP_ENDPOINT: ${{ vars.START_STOP_ENDPOINT }}
         with:
           token: ${{ secrets.DENO_DEPLOY_TOKEN }}
           action: ${{ github.event_name == 'delete' && 'delete' || 'deploy' }}
