@@ -119,6 +119,18 @@ jobs:
         if: ${{ env.DEPLOY_DENO_ENABLED == 'true' && steps.refs.outputs.is_tag_ref != 'true' && steps.refs.outputs.is_artifact_ref != 'true' && github.event_name != 'delete' }}
         run: deno install --node-modules-dir=auto --no-lock
 
+      - name: Generate OpenAPI types for deploy
+        if: ${{ env.DEPLOY_DENO_ENABLED == 'true' && steps.refs.outputs.is_tag_ref != 'true' && steps.refs.outputs.is_artifact_ref != 'true' && github.event_name != 'delete' }}
+        run: |
+          mkdir -p src/types/generated
+          npx --yes openapi-typescript "${MATCHMAKING_ENDPOINT}/openapi" --output src/types/generated/matchmaking.ts || \
+            npx --yes openapi-typescript "https://text-vector-embeddings-mai.deno.dev/openapi" --output src/types/generated/matchmaking.ts
+          npx --yes openapi-typescript "${START_STOP_ENDPOINT}/openapi" --output src/types/generated/start-stop.ts || \
+            npx --yes openapi-typescript "https://command-start-stop-main.deno.dev/openapi" --output src/types/generated/start-stop.ts
+        env:
+          MATCHMAKING_ENDPOINT: ${{ vars.MATCHMAKING_ENDPOINT || 'https://text-vector-embeddings-mai.deno.dev' }}
+          START_STOP_ENDPOINT: ${{ vars.START_STOP_ENDPOINT || 'https://command-start-stop-main.deno.dev' }}
+
       - name: Generate manifest for deploy
         if: ${{ env.DEPLOY_DENO_ENABLED == 'true' && steps.refs.outputs.is_tag_ref != 'true' && steps.refs.outputs.is_artifact_ref != 'true' && github.event_name != 'delete' }}
         run: deno x -A -y --no-lock npm:@ubiquity-os/plugin-manifest-tool@latest
