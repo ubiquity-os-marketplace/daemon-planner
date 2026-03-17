@@ -25,9 +25,7 @@
     "test": "jest --setupFiles dotenv/config --coverage",
     "worker": "wrangler dev --env dev --port 4000",
     "generate": "dotenv -- npm run generate:openapi-types",
-    "generate:openapi-types": "mkdir -p src/types/generated && npm run generate:text-vector-embeddings && npm run generate:command-start-stop",
-    "generate:text-vector-embeddings": "npx --yes openapi-typescript \"${MATCHMAKING_ENDPOINT}/openapi\" --output src/types/generated/matchmaking.ts",
-    "generate:command-start-stop": "npx --yes openapi-typescript \"${START_STOP_ENDPOINT}/openapi\" --output src/types/generated/start-stop.ts",
+    "generate:openapi-types": "bash ./scripts/generate-openapi-types.sh",
     "prepare": "bun run prepare:manifest && bun run generate && husky",
     "prepare:manifest": "bunx @ubiquity-os/plugin-manifest-tool@latest",
     "prebuild": "bun run prepare:manifest"

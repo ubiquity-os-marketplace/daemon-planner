@@ -33,7 +33,7 @@ Set these variables wherever the worker/action executes:
 
 - `MATCHMAKING_ENDPOINT`: REST endpoint that ranks candidates for a task.
 - `START_STOP_ENDPOINT`: Endpoint invoked after assignments to orchestrate auxiliary workflows.
-  OpenAPI specs are read directly from each endpoint's `/openapi` path during the `prepare` step to generate types, so both variables must be set anywhere `prepare` or deploy workflows run.
+  OpenAPI specs are read directly from each endpoint's `/openapi` path during generation, and deploy workflows pass these variables through explicitly.
 
 ## Development
 
