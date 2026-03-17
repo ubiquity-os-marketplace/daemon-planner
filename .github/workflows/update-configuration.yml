@@ -115,13 +115,17 @@ jobs:
         with:
           deno-version: v2.x
 
+      - name: Set up Bun
+        if: ${{ env.DEPLOY_DENO_ENABLED == 'true' && steps.refs.outputs.is_tag_ref != 'true' && steps.refs.outputs.is_artifact_ref != 'true' && github.event_name != 'delete' }}
+        uses: oven-sh/setup-bun@v2
+
       - name: Install dependencies
         if: ${{ env.DEPLOY_DENO_ENABLED == 'true' && steps.refs.outputs.is_tag_ref != 'true' && steps.refs.outputs.is_artifact_ref != 'true' && github.event_name != 'delete' }}
         run: deno install --node-modules-dir=auto --no-lock
 
       - name: Generate OpenAPI types for deploy
         if: ${{ env.DEPLOY_DENO_ENABLED == 'true' && steps.refs.outputs.is_tag_ref != 'true' && steps.refs.outputs.is_artifact_ref != 'true' && github.event_name != 'delete' }}
-        run: npm run generate:openapi-types
+        run: bun run generate:openapi-types
         env:
           MATCHMAKING_ENDPOINT: ${{ vars.MATCHMAKING_ENDPOINT }}
           START_STOP_ENDPOINT: ${{ vars.START_STOP_ENDPOINT }}

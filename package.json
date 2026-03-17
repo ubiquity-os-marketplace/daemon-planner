@@ -24,7 +24,7 @@
     "knip-ci": "knip --no-exit-code --reporter json --config .github/knip.ts",
     "test": "jest --setupFiles dotenv/config --coverage",
     "worker": "wrangler dev --env dev --port 4000",
-    "generate": "dotenv -- npm run generate:openapi-types",
+    "generate": "dotenv -- bun run generate:openapi-types",
     "generate:openapi-types": "bash ./scripts/generate-openapi-types.sh",
     "prepare": "bun run prepare:manifest && bun run generate && husky",
     "prepare:manifest": "bunx @ubiquity-os/plugin-manifest-tool@latest",

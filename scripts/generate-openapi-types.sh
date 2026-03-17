@@ -10,12 +10,12 @@ generate_type() {
   local output="$3"
 
   if [[ "${STRICT_OPENAPI_ENDPOINTS:-false}" == "true" ]]; then
-    npx --yes openapi-typescript "${endpoint}/openapi" --output "${output}"
+    bunx openapi-typescript "${endpoint}/openapi" --output "${output}"
     return
   fi
 
-  npx --yes openapi-typescript "${endpoint}/openapi" --output "${output}" || \
-    npx --yes openapi-typescript "${fallback}/openapi" --output "${output}"
+  bunx openapi-typescript "${endpoint}/openapi" --output "${output}" || \
+    bunx openapi-typescript "${fallback}/openapi" --output "${output}"
 }
 
 generate_type "${MATCHMAKING_ENDPOINT}" "https://text-vector-embeddings-mai.deno.dev" "src/types/generated/matchmaking.ts"
