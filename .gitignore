@@ -21,3 +21,5 @@ src/types/generated
 # JetBrains
 .idea/
 *.env.json
+manifest.json
+dist/

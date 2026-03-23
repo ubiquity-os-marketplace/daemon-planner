@@ -13,6 +13,10 @@ jobs:
     permissions: write-all
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.11.0"
+
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
