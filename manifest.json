@@ -44,5 +44,6 @@
         "type": "boolean"
       }
     }
-  }
+  },
+  "homepage_url": "https://daemon-planner-development.ubiquity-os.deno.net"
 }
