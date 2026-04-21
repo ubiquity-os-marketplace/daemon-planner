@@ -1,11 +1,11 @@
-import { Context as PluginContext } from "@ubiquity-os/plugin-sdk";
-import { RestEndpointMethodTypes } from "@ubiquity-os/plugin-sdk/octokit";
+import type { Context as PluginContext } from "@ubiquity-os/plugin-sdk";
+import type { RestEndpointMethodTypes } from "@ubiquity-os/plugin-sdk/octokit";
 import type { CandidatePool } from "../candidates/candidate-pool";
 import type { RunSummary } from "../github/create-run-summary";
 import type { OrgOctokitPool } from "../github/org-octokit-pool";
 import type { TaskPriorityPool } from "../tasks/task-priority-pool";
-import { Env } from "./env";
-import { PluginSettings } from "./plugin-input";
+import type { Env } from "./env";
+import type { PluginSettings } from "./plugin-input";
 
 export type SupportedEvents = "issues.opened" | "issues.reopened" | "issues.closed";
 

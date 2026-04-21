@@ -1,12 +1,15 @@
-import { createActionsPlugin, Options } from "@ubiquity-os/plugin-sdk";
+import { createActionsPlugin } from "@ubiquity-os/plugin-sdk";
+import type { Options } from "@ubiquity-os/plugin-sdk";
 import { LOG_LEVEL, LogLevel } from "@ubiquity-os/ubiquity-os-logger";
 import { createRunSummary } from "./github/create-run-summary";
 import { formatRunSummaryMarkdown } from "./github/format-run-summary-markdown";
 import { writeGithubStepSummary } from "./github/write-github-step-summary";
 import { runPlugin } from "./index";
-import { SupportedEvents } from "./types/context";
-import { Env, envSchema } from "./types/env";
-import { PluginSettings, pluginSettingsSchema } from "./types/plugin-input";
+import type { SupportedEvents } from "./types/context";
+import { envSchema } from "./types/env";
+import type { Env } from "./types/env";
+import { pluginSettingsSchema } from "./types/plugin-input";
+import type { PluginSettings } from "./types/plugin-input";
 
 export default createActionsPlugin<PluginSettings, Env, null, SupportedEvents>(
   async (context) => {

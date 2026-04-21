@@ -3,7 +3,7 @@ import { drop } from "@mswjs/data";
 import { customOctokit as Octokit } from "@ubiquity-os/plugin-sdk/octokit";
 import { Logs } from "@ubiquity-os/ubiquity-os-logger";
 import { http, HttpResponse } from "msw";
-import manifest from "../manifest.json";
+import manifest from "../manifest.json" with { type: "json" };
 import { runPlugin } from "../src";
 import { createRunSummary } from "../src/github/create-run-summary";
 import type { BaseContext } from "../src/types/context";
@@ -41,7 +41,7 @@ describe("Plugin tests", () => {
       APP_PRIVATE_KEY: "private_key",
     });
     const content = await response.json();
-    expect(content).toEqual(manifest);
+    expect(content).toEqual({ ...manifest, homepage_url: "http://localhost" });
   });
 
   it("Should assign a newly opened issue to the least loaded candidate", async () => {
